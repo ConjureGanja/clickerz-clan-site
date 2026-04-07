@@ -43,10 +43,13 @@ const CLAN_INFO = {
     "made your first account, you'll find a welcoming home here. No elitism, " +
     "no drama, no gatekeeping. Just grinding, bossing, and hanging out together.",
 
-  // ---- Links (set to null to hide, '#' as placeholder until you have the real URL) ----
-  // TODO: Replace '#' with your actual Discord invite link
-  discordUrl: '#',
-  // TODO: Replace '#' with your clan application form/thread, or set to null to hide the button
+  // ---- Links ----
+  // discordUrl is REQUIRED — Discord CTAs are always rendered across the page.
+  // TODO: Replace this with your actual Discord invite link before publishing.
+  //       e.g. 'https://discord.gg/your-invite-code'
+  discordUrl: 'https://discord.gg/your-invite-code',
+  // Optional links below — set to null to hide their related buttons/footer entries.
+  // TODO: Replace with your clan application form/thread, or set to null to hide the button
   applyUrl: null,
   // TODO: Set your official OSRS clan forum thread URL, or null to hide
   runeScapeForumUrl: null,
@@ -336,10 +339,13 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile dropdown.
+          inert removes hidden links from the tab order so keyboard users can't
+          accidentally focus invisible items (aria-hidden alone doesn't do this). */}
       <div
         className={`navbar__mobile-menu${menuOpen ? ' navbar__mobile-menu--open' : ''}`}
         aria-hidden={!menuOpen}
+        inert={!menuOpen ? '' : undefined}
       >
         {navLinks.map(link => (
           <a
@@ -837,7 +843,7 @@ function Footer() {
             <div className="footer__col">
               <h4 className="footer__col-heading">Leadership</h4>
               <ul className="footer__links" role="list">
-                {STAFF.map((member, i) => (
+                {STAFF.filter(member => member.rsn !== 'YourRSN').map((member, i) => (
                   <li key={i}>
                     <span className="footer__staff-rsn">{member.rsn}</span>
                     <span className="footer__staff-role"> — {member.role}</span>

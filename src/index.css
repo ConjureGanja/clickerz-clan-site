@@ -17,6 +17,10 @@
 html {
   /* Smooth scrolling for anchor nav links */
   scroll-behavior: smooth;
+  /* Offset anchor targets so the fixed navbar doesn't cover section headings.
+     --navbar-height is defined in App.css; the fallback keeps this safe if ever
+     imported standalone. */
+  scroll-padding-top: var(--navbar-height, 64px);
   font-size: 16px;
 }
 
