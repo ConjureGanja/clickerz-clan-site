@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
  * 1) Update Discord / social links in SITE_LINKS
  * 2) Update weekly SOTW / BOTW in WEEKLY_EVENTS
  * 3) Update clan stats in CLAN_STATS
- * 4) Replace mock leaderboard data later with Wise Old Man API
+ * 4) Update real member names/scores in LEADERBOARD_DATA
  * ============================================================
  */
 
@@ -37,18 +37,18 @@ const CLAN_STATS = {
  */
 const WEEKLY_EVENTS = {
   sotw: {
-    enabled: false,
-    title: "SOTW — Agility",
-    subtitle: "Race for the most Agility XP this week.",
-    startDate: "March 9, 2026",
-    endDate: "March 15, 2026",
-    prize: "1st: 5M · 2nd: 2M · 3rd: 1M",
-    notes: "Bonus flex points if you survive rooftop brain rot.",
+    enabled: true,
+    title: "SOTW — Thieving",
+    subtitle: "Race for the most Thieving XP this week. 25M GP pot on the line — get pickpocketing!",
+    startDate: "March 31, 2026 · 8PM EST",
+    endDate: "April 7, 2026 · 8PM EST",
+    prize: "25,000,000 GP",
+    notes: "Track via Wise Old Man. Screenshots required as backup. May the best thief win.",
     ctaLabel: "View SOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
   botw: {
-    enabled: true,
+    enabled: false,
     title: "BOTW — Scurrius",
     subtitle: "Highest kill count by reset wins.",
     startDate: "March 13, 2026",
@@ -60,6 +60,12 @@ const WEEKLY_EVENTS = {
   },
 };
 
+/*
+ * LEADERBOARD DATA
+ * ------------------------------------------------------------
+ * Replace these with real member names and scores.
+ * Skills: Total Level · Bosses: Kill Count
+ */
 const LEADERBOARD_DATA = {
   skills: [
     { rank: 1, name: "ClickMaster99", value: "2277", icon: "⚔️", change: "+12" },
@@ -104,23 +110,23 @@ function FloatingParticle({ delay, x, size, emoji }) {
   );
 }
 
-function SectionBadge({ children, tone = "blue" }) {
+function SectionBadge({ children, tone = "sky" }) {
   const tones = {
-    blue: {
-      color: "#2563EB",
-      bg: "rgba(59,130,246,0.08)",
-    },
-    teal: {
-      color: "#06B6D4",
-      bg: "rgba(6,182,212,0.08)",
+    sky: {
+      color: "#87ceeb",
+      bg: "rgba(135,206,235,0.1)",
     },
     gold: {
-      color: "#F59E0B",
-      bg: "rgba(245,158,11,0.08)",
+      color: "#ffd700",
+      bg: "rgba(255,215,0,0.1)",
     },
     purple: {
-      color: "#5865F2",
-      bg: "rgba(88,101,242,0.08)",
+      color: "#7c8aff",
+      bg: "rgba(124,138,255,0.1)",
+    },
+    teal: {
+      color: "#56c8e8",
+      bg: "rgba(86,200,232,0.1)",
     },
   };
 
@@ -154,7 +160,8 @@ function NavBar({ activeSection }) {
     >
       <div className="container nav-inner">
         <a href="#home" className="logo">
-          CLICKERZ<span>.CC</span>
+          <img src="/logo.png" alt="Clickerz Clan Logo" className="nav-logo-img" />
+          <span className="nav-logo-text">CLICKERZ<span>.CC</span></span>
         </a>
 
         <div className="nav-links desktop-only">
@@ -223,9 +230,13 @@ function HeroSection() {
       ))}
 
       <div className="container hero-content">
+        <div className="hero-logo-wrap">
+          <img src="/logo.png" alt="Clickerz Clan" className="hero-logo-img" />
+        </div>
+
         <div className="hero-badge">
           <span>🌿</span>
-          <span>OSRS Clan · Est. 2025</span>
+          <span>OSRS Clan · Est. 2026</span>
         </div>
 
         <h1 className="hero-title">
@@ -286,25 +297,25 @@ function ValuesSection() {
       icon: "🛡️",
       title: "Zero Toxicity",
       desc: "We don't do 'sit kid.' Trash talk stays in PvP worlds. In our clan, everyone eats.",
-      color: "#2563EB",
+      color: "#87ceeb",
     },
     {
       icon: "🤝",
       title: "Actually Helpful",
       desc: "Ask a 'noob question' and get a real answer, not a 'just Google it.' We all started at Tutorial Island.",
-      color: "#06B6D4",
+      color: "#ffd700",
     },
     {
       icon: "🎯",
       title: "All Playstyles",
       desc: "Ironman? PvMer? Skiller? Bankstander? We don't care what you click — just that you click with us.",
-      color: "#8B5CF6",
+      color: "#87ceeb",
     },
     {
       icon: "🏆",
       title: "Growth Mindset",
       desc: "Whether you're going for your first fire cape or speed-running inferno, we celebrate every W.",
-      color: "#F59E0B",
+      color: "#ffd700",
     },
   ];
 
@@ -312,7 +323,7 @@ function ValuesSection() {
     <section id="values" className="page-section">
       <div className="container">
         <div className="section-header">
-          <SectionBadge tone="blue">Our Values</SectionBadge>
+          <SectionBadge tone="sky">Our Values</SectionBadge>
           <h2 className="section-title">What We&apos;re About</h2>
           <p className="section-subtitle">
             Think of us as the clan hall where everyone&apos;s welcome at the table.
@@ -328,7 +339,7 @@ function ValuesSection() {
             >
               <div
                 className="value-card__icon"
-                style={{ background: `${value.color}10` }}
+                style={{ background: `${value.color}18` }}
               >
                 {value.icon}
               </div>
@@ -403,8 +414,8 @@ function EventsSection() {
   const cards = [
     {
       key: "sotw",
-      icon: "📈",
-      toneClass: "event-card--blue",
+      icon: "🎒",
+      toneClass: "event-card--sky",
       ...WEEKLY_EVENTS.sotw,
     },
     {
@@ -422,7 +433,7 @@ function EventsSection() {
           <SectionBadge tone="gold">Weekly Events</SectionBadge>
           <h2 className="section-title">SOTW / BOTW</h2>
           <p className="section-subtitle">
-            These are intentionally easy to update. Edit one object at the top of App.jsx and you&apos;re done.
+            Compete with your fellow Clickerz for glory and GP. Check Discord for details and to submit your scores.
           </p>
         </div>
 
@@ -446,8 +457,8 @@ function EventsSection() {
                 </div>
 
                 <div className="event-card__detail">
-                  <span className="event-card__label">Prizes</span>
-                  <p>{event.prize}</p>
+                  <span className="event-card__label">Prize Pool</span>
+                  <p className="event-card__prize">{event.prize}</p>
                 </div>
 
                 <div className="event-card__detail">
@@ -482,12 +493,12 @@ function LeaderboardSection() {
   const data = activeTab === "skills" ? LEADERBOARD_DATA.skills : LEADERBOARD_DATA.bosses;
 
   return (
-    <section id="leaderboards" className="page-section">
+    <section id="leaderboards" className="page-section page-section--gradient">
       <div className="container narrow">
         <div className="section-header">
           <SectionBadge tone="gold">Leaderboards</SectionBadge>
           <h2 className="section-title">Top Clickers</h2>
-          <p className="section-subtitle">Powered by Wise Old Man · Updated live later</p>
+          <p className="section-subtitle">Our finest Clickerz — updated regularly.</p>
         </div>
 
         <div className="tab-switcher">
@@ -523,7 +534,7 @@ function LeaderboardSection() {
         </div>
 
         <p className="leaderboard-note">
-          Mock data for now — swap this with live Wise Old Man data later.
+          Powered by Wise Old Man · Update <code>LEADERBOARD_DATA</code> in App.jsx with real member names &amp; scores.
         </p>
       </div>
     </section>
@@ -537,7 +548,7 @@ function DiscordSection() {
         <SectionBadge tone="purple">Community</SectionBadge>
         <h2 className="section-title">Come Hang Out</h2>
         <p className="section-subtitle section-subtitle--center">
-          Our Discord is where the magic happens. Drop in, say hi, and see what we&apos;re about before you commit.
+          Our Discord is where the magic happens. Events, giveaways, and good vibes — all in one place.
         </p>
 
         <div className="discord-card">
@@ -545,18 +556,28 @@ function DiscordSection() {
           <h3 className="discord-card__title">Clickerz Discord</h3>
           <div className="discord-card__status">
             <span className="online-dot" />
-            <span>12 Online Now</span>
+            <span>Active Now</span>
           </div>
-          <p className="discord-card__text">
-            Replace this later with a real Discord widget or keep it as a clean join card.
-          </p>
+
+          <div className="giveaway-banner">
+            <div className="giveaway-banner__icon">🎁</div>
+            <div>
+              <div className="giveaway-banner__title">Giveaways Live Right Now!</div>
+              <p className="giveaway-banner__text">
+                We run regular giveaways as a thank-you to all our members just for being part of the clan.
+                There&apos;s an active giveaway happening now — head to the <strong>#giveaways</strong> channel
+                in Discord to sign up. Winner selected from all who entered!
+              </p>
+            </div>
+          </div>
+
           <a
             href={SITE_LINKS.discord}
             target="_blank"
             rel="noreferrer"
             className="button button--discord"
           >
-            Join Discord
+            Join Discord &amp; Enter Giveaway
           </a>
         </div>
       </div>
