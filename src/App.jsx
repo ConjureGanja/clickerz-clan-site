@@ -51,7 +51,7 @@ const WEEKLY_EVENTS = {
     enabled: false,
     title: "BOTW — Scurrius",
     subtitle: "Highest kill count by reset wins.",
-    startDate: "March 13, 2026",
+    startDate: "March 10, 2026",
     endDate: "March 16, 2026",
     prize: "1st: 3M · 2nd: 2M · 3rd: 1M",
     notes: "Screenshots or Wise Old Man tracking required.",
