@@ -695,11 +695,11 @@ code {
   line-height: 1.7;
 }
 
-.event-card__prize {
+.event-card__detail .event-card__prize {
   font-family: "Press Start 2P", monospace;
-  font-size: 18px !important;
-  color: var(--gold) !important;
-  line-height: 1.5 !important;
+  font-size: 18px;
+  color: var(--gold);
+  line-height: 1.5;
   text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
