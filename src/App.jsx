@@ -81,7 +81,7 @@ function formatMetricName(metric) {
 }
 
 function formatCompDate(isoString) {
-  return new Date(isoString).toLocaleDateString("en-US", {
+  return new Date(isoString).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -822,7 +822,7 @@ export default function App() {
   // WOM hiscores — leaderboard, refreshes every 10 minutes
   useEffect(() => {
     const fetchLeaderboard = () => {
-      Promise.all([
+      Promise.allSettled([
         fetch(
           `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=10`
         ).then((r) => {
@@ -835,27 +835,31 @@ export default function App() {
           if (!r.ok) throw new Error();
           return r.json();
         }),
-      ])
-        .then(([skillsRaw, bossesRaw]) => {
-          const skills = skillsRaw.map((entry, i) => ({
-            rank: i + 1,
-            name: entry.player.displayName,
-            value: (entry.data.level ?? 0).toLocaleString(),
-            change: null,
-          }));
-          const bosses = bossesRaw
-            .filter((entry) => (entry.data.value ?? 0) > 0)
-            .map((entry, i) => ({
-              rank: i + 1,
-              name: entry.player.displayName,
-              value: `${Math.round(entry.data.value).toLocaleString()} EHB`,
-              change: null,
-            }));
-          setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
-        })
-        .catch(() =>
-          setLeaderboard({ data: { skills: [], bosses: [] }, loading: false, error: true })
-        );
+      ]).then(([skillsResult, bossesResult]) => {
+        const skills =
+          skillsResult.status === "fulfilled"
+            ? skillsResult.value.map((entry, i) => ({
+                rank: i + 1,
+                name: entry.player.displayName,
+                value: (entry.data.level ?? 0).toLocaleString(),
+                change: null,
+              }))
+            : [];
+        const bosses =
+          bossesResult.status === "fulfilled"
+            ? bossesResult.value
+                .filter((entry) => (entry.data.value ?? 0) > 0)
+                .map((entry, i) => ({
+                  rank: i + 1,
+                  name: entry.player.displayName,
+                  value: `${Math.round(entry.data.value).toLocaleString()} EHB`,
+                  change: null,
+                }))
+            : [];
+        const error =
+          skillsResult.status === "rejected" && bossesResult.status === "rejected";
+        setLeaderboard({ data: { skills, bosses }, loading: false, error });
+      });
     };
     fetchLeaderboard();
     const interval = setInterval(fetchLeaderboard, 10 * 60 * 1000);
