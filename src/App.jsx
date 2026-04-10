@@ -876,7 +876,9 @@ export default function App() {
           );
           setWomComps(active);
         })
-        .catch(() => {});
+        .catch(() => {
+          setWomComps([]);
+        });
     };
     fetchComps();
     const interval = setInterval(fetchComps, 10 * 60 * 1000);
