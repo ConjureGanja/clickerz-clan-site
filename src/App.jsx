@@ -775,7 +775,7 @@ export default function App() {
           return r.json();
         })
         .then((d) => setDiscordOnline(d.presence_count))
-        .catch(() => {});
+        .catch(() => setDiscordOnline(null));
     };
     fetchDiscord();
     const interval = setInterval(fetchDiscord, 5 * 60 * 1000);
