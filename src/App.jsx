@@ -859,7 +859,9 @@ export default function App() {
         const error =
           skillsResult.status === "rejected" && bossesResult.status === "rejected";
         setLeaderboard({ data: { skills, bosses }, loading: false, error });
-      });
+      }).catch(() =>
+        setLeaderboard({ data: { skills: [], bosses: [] }, loading: false, error: true })
+      );
     };
     fetchLeaderboard();
     const interval = setInterval(fetchLeaderboard, 10 * 60 * 1000);
