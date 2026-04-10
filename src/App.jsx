@@ -812,7 +812,7 @@ export default function App() {
           return r.json();
         })
         .then((g) => setWomMemberCount(g.memberCount))
-        .catch(() => {});
+        .catch(() => setWomMemberCount(null));
     };
     fetchGroup();
     const interval = setInterval(fetchGroup, 10 * 60 * 1000);
