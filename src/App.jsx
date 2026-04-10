@@ -404,11 +404,32 @@ function RulesSection() {
 function EventsSection({ womComps }) {
   const cards = [];
 
-  // Find active/upcoming WOM competitions by type
-  const sotwComp = womComps.find(
+  const getPreferredCompetition = (predicate) => {
+    const statusPriority = {
+      ongoing: 0,
+      upcoming: 1,
+    };
+
+    return womComps
+      .filter(predicate)
+      .sort((a, b) => {
+        const statusDiff =
+          (statusPriority[a.status] ?? 2) - (statusPriority[b.status] ?? 2);
+
+        if (statusDiff !== 0) return statusDiff;
+
+        const startA = a.startsAt ? new Date(a.startsAt).getTime() : Number.POSITIVE_INFINITY;
+        const startB = b.startsAt ? new Date(b.startsAt).getTime() : Number.POSITIVE_INFINITY;
+
+        return startA - startB;
+      })[0];
+  };
+
+  // Find active/upcoming WOM competitions by type, preferring ongoing first
+  const sotwComp = getPreferredCompetition(
     (c) => WOM_SKILLS.has(c.metric) && c.metric !== "overall"
   );
-  const botwComp = womComps.find((c) => !WOM_SKILLS.has(c.metric));
+  const botwComp = getPreferredCompetition((c) => !WOM_SKILLS.has(c.metric));
 
   // SOTW card — prefer WOM data, fall back to manual config
   if (sotwComp) {
