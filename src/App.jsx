@@ -154,7 +154,7 @@ function NavBar({ activeSection }) {
     >
       <div className="container nav-inner">
         <a href="#home" className="logo">
-          <img src="/logo.png" alt="Clickerz Clan Logo" className="nav-logo-img" />
+          <img src="/logo.svg" alt="Clickerz Clan Logo" className="nav-logo-img" />
           <span className="nav-logo-text">CLICKERZ<span>.CC</span></span>
         </a>
 
@@ -225,7 +225,7 @@ function HeroSection({ discordOnline, womMemberCount }) {
 
       <div className="container hero-content">
         <div className="hero-logo-wrap">
-          <img src="/logo.png" alt="Clickerz Clan" className="hero-logo-img" />
+          <img src="/logo.svg" alt="Clickerz Clan" className="hero-logo-img" />
         </div>
 
         <div className="hero-badge">
