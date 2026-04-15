@@ -956,6 +956,7 @@ code {
   position: absolute;
   inset: 0;
   opacity: 0.12;
+  pointer-events: none;
   background-image: radial-gradient(circle at 1px 1px, rgba(135, 206, 235, 0.4) 1px, transparent 0);
   background-size: 32px 32px;
 }
