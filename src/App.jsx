@@ -45,9 +45,8 @@ const CLAN_INFO = {
 
   // ---- Links ----
   // discordUrl is REQUIRED — Discord CTAs are always rendered across the page.
-  // TODO: Replace this with your actual Discord invite link before publishing.
-  //       e.g. 'https://discord.gg/your-invite-code'
-  discordUrl: 'https://discord.gg/your-invite-code',
+  // TODO: Update this if the invite link ever changes or expires.
+  discordUrl: 'https://discord.gg/cju3DSSdju',
   // Optional links below — set to null to hide their related buttons/footer entries.
   // TODO: Replace with your clan application form/thread, or set to null to hide the button
   applyUrl: null,
@@ -278,10 +277,14 @@ function Navbar() {
   const [menuOpen, setMenuOpen]   = useState(false);
   const [scrolled, setScrolled]   = useState(false);
 
-  // Add 'scrolled' class once the user scrolls past 30px
+  // Add 'scrolled' class once the user scrolls past 30px.
+  // Call onScroll() immediately so the state is correct on page load
+  // (e.g. when the page is refreshed on a mid-page anchor or restored
+  // from the back/forward cache already scrolled down).
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -345,7 +348,7 @@ function Navbar() {
       <div
         className={`navbar__mobile-menu${menuOpen ? ' navbar__mobile-menu--open' : ''}`}
         aria-hidden={!menuOpen}
-        inert={!menuOpen ? '' : undefined}
+        inert={!menuOpen}
       >
         {navLinks.map(link => (
           <a
@@ -492,8 +495,8 @@ function AboutSection() {
 
         {/* Values grid */}
         <div className="values-grid">
-          {values.map((v, i) => (
-            <div key={i} className="value-card">
+          {values.map((v) => (
+            <div key={v.title} className="value-card">
               <div className="value-card__icon" aria-hidden="true">{v.icon}</div>
               <h3 className="value-card__title">{v.title}</h3>
               <p className="value-card__body">{v.body}</p>
@@ -689,8 +692,8 @@ function JoinSection() {
               Beyond regular membership, we're actively looking for people to fill these roles:
             </p>
             <div className="open-roles-grid">
-              {openRoles.map((role, i) => (
-                <div key={i} className="role-card">
+              {openRoles.map((role) => (
+                <div key={role.title} className="role-card">
                   <div className="role-card__header">
                     <span className="role-card__icon" aria-hidden="true">{role.icon}</span>
                     <div>

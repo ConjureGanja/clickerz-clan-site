@@ -1297,7 +1297,6 @@
 .footer__copyright {
   font-size: 0.8rem;
   color: var(--color-text-dim);
-  white-space: nowrap;
 }
 
 
