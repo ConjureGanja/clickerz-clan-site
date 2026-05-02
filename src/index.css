@@ -20,7 +20,8 @@
   --gold-2: #ffec6e;    /* lighter gold */
   --discord: #5865f2;
 
-  /* Legacy aliases */
+  /* Purple (used inline, adding as variable for consistency) */
+  --purple: #7c8aff;
   --blue: #87ceeb;
   --blue-2: #b8e4f8;
   --teal: #56c8e8;
@@ -231,6 +232,11 @@ code {
 
 /* ── Hero ────────────────────────────────────────── */
 
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
 .hero-section--compact {
   min-height: 40vh;
   padding-top: 100px;
@@ -245,6 +251,7 @@ code {
   position: absolute;
   inset: 0;
   opacity: 0.25;
+  pointer-events: none;
   background-image: radial-gradient(circle at 1px 1px, rgba(135, 206, 235, 0.18) 1px, transparent 0);
   background-size: 40px 40px;
 }
@@ -410,6 +417,7 @@ code {
   border-radius: 16px;
   text-decoration: none;
   font-weight: 800;
+  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -1197,5 +1205,283 @@ code {
   .footer-inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+/* ── Event status finished ───────────────────────── */
+
+.event-status--finished {
+  background: rgba(135, 206, 235, 0.07);
+  color: var(--text-muted);
+}
+
+/* ── Reset note ──────────────────────────────────── */
+
+.reset-note {
+  margin: 0.75rem auto 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ── Winners / Podium ────────────────────────────── */
+
+.winners-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.winner-card {
+  padding: 1.75rem;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid rgba(135, 206, 235, 0.12);
+  box-shadow: var(--shadow-sm);
+}
+
+.winner-card--sky {
+  border-color: rgba(135, 206, 235, 0.22);
+  box-shadow: 0 0 40px rgba(135, 206, 235, 0.05);
+}
+
+.winner-card--gold {
+  border-color: rgba(255, 215, 0, 0.22);
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.05);
+}
+
+.winner-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.winner-card__icon {
+  font-size: 1.75rem;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(135, 206, 235, 0.08);
+  flex-shrink: 0;
+}
+
+.winner-card--gold .winner-card__icon {
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.winner-card__type {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  color: var(--sky);
+  line-height: 1.6;
+}
+
+.winner-card--gold .winner-card__type {
+  color: var(--gold);
+}
+
+.winner-card__metric {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-soft);
+  margin-top: 2px;
+}
+
+.podium-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.podium-entry {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(135, 206, 235, 0.06);
+}
+
+.podium-medal {
+  font-size: 18px;
+  text-align: center;
+}
+
+.podium-player {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.podium-gained {
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+  color: #4ade80;
+  white-space: nowrap;
+}
+
+.podium-empty {
+  padding: 0.75rem;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ── Leaderboards page ───────────────────────────── */
+
+.fun-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 0;
+}
+
+.fun-stat-card {
+  padding: 1.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid rgba(135, 206, 235, 0.08);
+  text-align: center;
+}
+
+.fun-stat-card__value {
+  font-family: "Press Start 2P", monospace;
+  font-size: 20px;
+  color: var(--gold);
+  line-height: 1.5;
+}
+
+.fun-stat-card__label {
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lboard-period-tabs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lboard-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+/* ── Guide post ──────────────────────────────────── */
+
+.breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+  color: var(--sky);
+}
+
+.guide-post-emoji {
+  font-size: 3rem;
+  margin: 0.5rem 0;
+}
+
+.guide-post-byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  color: var(--text-soft);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.guide-post-byline__sep {
+  color: var(--text-muted);
+}
+
+.guide-article {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2.5rem;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid rgba(135, 206, 235, 0.08);
+  box-shadow: var(--shadow-md);
+}
+
+.guide-article__excerpt {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--sky);
+  font-weight: 700;
+  margin: 0 0 1.5rem;
+}
+
+.guide-article__divider {
+  height: 2px;
+  border-radius: 999px;
+  opacity: 0.4;
+  margin-bottom: 1.75rem;
+}
+
+.guide-article__content p {
+  color: var(--text-soft);
+  font-size: 16px;
+  line-height: 1.8;
+  margin: 0 0 1.25rem;
+}
+
+.guide-article__content p:last-child {
+  margin-bottom: 0;
+}
+
+.guide-post-footer {
+  max-width: 780px;
+  margin: 2rem auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ── New responsive rules ────────────────────────── */
+
+@media (max-width: 900px) {
+  .winners-grid,
+  .lboard-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .fun-stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .guide-article {
+    padding: 1.5rem;
+  }
+
+  .guide-post-footer {
+    flex-direction: column;
+  }
+
+  .guide-post-footer .button {
+    width: 100%;
   }
 }
