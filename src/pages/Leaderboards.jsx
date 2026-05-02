@@ -19,7 +19,7 @@ function SectionBadge({ children, tone = "sky" }) {
 }
 
 function formatValue(val, suffix = "") {
-  if (val == null) return "—";
+  if (val === null || val === undefined) return "—";
   const n = Number(val);
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M" + suffix;
   if (n >= 1_000) return (n / 1_000).toFixed(1) + "k" + suffix;
@@ -142,6 +142,7 @@ export default function Leaderboards() {
           ? result.value.map((e, i) => ({
               rank: i + 1,
               name: e.player.displayName,
+              rawGained: e.data.gained ?? 0,
               value: formatValue(e.data.gained),
               change: formatValue(e.data.gained),
             }))
@@ -174,12 +175,8 @@ export default function Leaderboards() {
       .catch(() => setRecordsLoading(false));
   }, []);
 
-  // Derive fun stats from already-fetched data
-  const totalWeeklyXP = gainers.weekXP.reduce((sum, r) => {
-    const raw = r.value.replace(/[^0-9.]/g, "");
-    const mul = r.value.endsWith("M") ? 1_000_000 : r.value.endsWith("k") ? 1_000 : 1;
-    return sum + parseFloat(raw || 0) * mul;
-  }, 0);
+  // Derive fun stats using raw numeric values stored alongside the formatted strings
+  const totalWeeklyXP = gainers.weekXP.reduce((sum, r) => sum + (r.rawGained ?? 0), 0);
 
   const achCount = achievements.length;
   const recordCount = records.length;

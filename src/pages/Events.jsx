@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatGained, fetchCompetitionWinners } from "../utils/wom";
 
 const WOM_GROUP_ID = 21596;
 const WOM_BASE = "https://api.wiseoldman.net/v2";
@@ -45,16 +46,6 @@ function formatCompDate(isoString) {
   });
 }
 
-function formatGained(value, isSkill) {
-  if (value == null) return "0";
-  const n = Number(value);
-  if (isSkill) {
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M xp";
-    if (n >= 1_000) return (n / 1_000).toFixed(1) + "k xp";
-    return n.toLocaleString() + " xp";
-  }
-  return n.toLocaleString() + " kc";
-}
 
 function WinnerPodium({ comp, participations, isSkill }) {
   const medals = ["🥇", "🥈", "🥉"];
@@ -118,19 +109,8 @@ export default function Events() {
         );
         const lastBotw = finished.find((c) => !WOM_SKILLS.has(c.metric));
 
-        const fetchWinners = async (comp, setter) => {
-          if (!comp) return;
-          try {
-            const res = await fetch(`${WOM_BASE}/competitions/${comp.id}`);
-            const detail = await res.json();
-            setter({ comp, participations: detail.participations ?? [] });
-          } catch {
-            setter({ comp, participations: [] });
-          }
-        };
-
-        fetchWinners(lastSotw, setSotwWinners);
-        fetchWinners(lastBotw, setBotwWinners);
+        if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
+        if (lastBotw) fetchCompetitionWinners(lastBotw).then(setBotwWinners);
       })
       .catch(() => setLoading(false));
   }, []);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { formatGained, fetchCompetitionWinners } from "../utils/wom";
 
 const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
@@ -294,17 +295,6 @@ function RulesSection() {
       </div>
     </section>
   );
-}
-
-function formatGained(value, isSkill) {
-  if (value == null) return "0";
-  const n = Number(value);
-  if (isSkill) {
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M xp";
-    if (n >= 1_000) return (n / 1_000).toFixed(1) + "k xp";
-    return n.toLocaleString() + " xp";
-  }
-  return n.toLocaleString() + " kc";
 }
 
 function PreviousWinnersRow({ sotwWinners, botwWinners }) {
@@ -749,19 +739,8 @@ export default function Home() {
         const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric) && c.metric !== "overall");
         const lastBotw = finished.find(c => !WOM_SKILLS.has(c.metric));
 
-        const fetchWinners = async (comp, setter) => {
-          if (!comp) return;
-          try {
-            const res = await fetch(`https://api.wiseoldman.net/v2/competitions/${comp.id}`);
-            const detail = await res.json();
-            setter({ comp, participations: detail.participations ?? [] });
-          } catch {
-            setter({ comp, participations: [] });
-          }
-        };
-
-        fetchWinners(lastSotw, setSotwWinners);
-        fetchWinners(lastBotw, setBotwWinners);
+        if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
+        if (lastBotw) fetchCompetitionWinners(lastBotw).then(setBotwWinners);
       })
       .catch(() => {});
   }, []);
