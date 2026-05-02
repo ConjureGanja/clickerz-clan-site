@@ -232,6 +232,11 @@ code {
 
 /* ── Hero ────────────────────────────────────────── */
 
+.hero-section {
+  position: relative;
+  overflow: hidden;
+}
+
 .hero-section--compact {
   min-height: 40vh;
   padding-top: 100px;
@@ -246,6 +251,7 @@ code {
   position: absolute;
   inset: 0;
   opacity: 0.25;
+  pointer-events: none;
   background-image: radial-gradient(circle at 1px 1px, rgba(135, 206, 235, 0.18) 1px, transparent 0);
   background-size: 40px 40px;
 }
@@ -411,6 +417,7 @@ code {
   border-radius: 16px;
   text-decoration: none;
   font-weight: 800;
+  cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 

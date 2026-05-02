@@ -3,7 +3,7 @@ export const GUIDES = [
     slug: "starting-out-in-clickerz",
     title: "Starting Out in Clickerz",
     category: "General",
-    author: "Mod Click",
+    author: "ConjuresBuds",
     date: "April 10, 2026",
     excerpt:
       "Everything you need to know about our clan ranks, Discord setup, and how to get involved in our weekly events.",
@@ -22,7 +22,7 @@ export const GUIDES = [
     slug: "efficiency-101-osrs-basics",
     title: "Efficiency 101: OSRS Basics",
     category: "Skilling",
-    author: "SkillKing",
+    author: "ConjuresBuds",
     date: "April 12, 2026",
     excerpt:
       "New to the game? Here's how to optimize your early levels and unlock the most important teleports and items quickly.",
@@ -41,7 +41,7 @@ export const GUIDES = [
     slug: "bossing-for-beginners",
     title: "Bossing for Beginners",
     category: "PvM",
-    author: "BossSlayer",
+    author: "ConjuresBuds",
     date: "April 15, 2026",
     excerpt:
       "Ready to move past Scurrius? We break down the easiest bosses to start your PvM journey and what gear you'll need.",
@@ -60,7 +60,7 @@ export const GUIDES = [
     slug: "wise-old-man-tracking-guide",
     title: "Wise Old Man Tracking Guide",
     category: "Meta",
-    author: "TrackerMod",
+    author: "ConjuresBuds",
     date: "April 16, 2026",
     excerpt:
       "How to ensure your gains are being tracked correctly on Wise Old Man so you can participate in SOTW and BOTW.",

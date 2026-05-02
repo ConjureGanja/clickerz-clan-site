@@ -89,7 +89,7 @@ export default function Events() {
 
         const finished = data.filter((c) => c.status === "finished");
         const lastSotw = finished.find(
-          (c) => WOM_SKILLS.has(c.metric) && c.metric !== "overall"
+          (c) => WOM_SKILLS.has(c.metric)
         );
         const lastBotw = finished.find((c) => !WOM_SKILLS.has(c.metric));
 

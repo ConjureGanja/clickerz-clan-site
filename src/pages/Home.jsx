@@ -352,7 +352,7 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
   };
 
   const sotwComp = getPreferredCompetition(
-    (c) => WOM_SKILLS.has(c.metric) && c.metric !== "overall"
+    (c) => WOM_SKILLS.has(c.metric)
   );
   const botwComp = getPreferredCompetition((c) => !WOM_SKILLS.has(c.metric));
 
@@ -719,7 +719,7 @@ export default function Home() {
         setWomComps(active);
 
         const finished = comps.filter(c => c.status === "finished");
-        const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric) && c.metric !== "overall");
+        const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric));
         const lastBotw = finished.find(c => !WOM_SKILLS.has(c.metric));
 
         if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
