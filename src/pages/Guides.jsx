@@ -1,31 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { GUIDES, GUIDE_CATEGORIES } from "../data/guides";
-
-const TONE_COLORS = {
-  sky:    "#87ceeb",
-  gold:   "#ffd700",
-  teal:   "#56c8e8",
-  purple: "#7c8aff",
-};
-
-function SectionBadge({ children, tone = "sky" }) {
-  const tones = {
-    sky:    { color: "#87ceeb", bg: "rgba(135,206,235,0.1)" },
-    gold:   { color: "#ffd700", bg: "rgba(255,215,0,0.1)" },
-    purple: { color: "#7c8aff", bg: "rgba(124,138,255,0.1)" },
-    teal:   { color: "#56c8e8", bg: "rgba(86,200,232,0.1)" },
-  };
-
-  return (
-    <span
-      className="section-badge"
-      style={{ color: tones[tone].color, background: tones[tone].bg }}
-    >
-      {children}
-    </span>
-  );
-}
+import SectionBadge, { TONE_COLORS } from "../components/SectionBadge";
 
 export default function Guides() {
   const [activeCategory, setActiveCategory] = useState("All");

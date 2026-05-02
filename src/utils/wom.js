@@ -19,7 +19,7 @@ export function formatGained(value, isSkill) {
 
 /**
  * Fetches competition details including participations (sorted by gained desc).
- * @param {number} competitionId
+ * @param {object} competition - Competition object with an id property
  * @returns {Promise<{ comp: object, participations: object[] }>}
  */
 export async function fetchCompetitionWinners(competition) {

@@ -1,12 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { GUIDES } from "../data/guides";
-
-const TONE_COLORS = {
-  sky:    "#87ceeb",
-  gold:   "#ffd700",
-  teal:   "#56c8e8",
-  purple: "#7c8aff",
-};
+import { TONE_COLORS } from "../components/SectionBadge";
 
 export default function GuidePost() {
   const { slug } = useParams();
