@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
@@ -295,7 +296,65 @@ function RulesSection() {
   );
 }
 
-function EventsSection({ womComps }) {
+function formatGained(value, isSkill) {
+  if (value == null) return "0";
+  const n = Number(value);
+  if (isSkill) {
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M xp";
+    if (n >= 1_000) return (n / 1_000).toFixed(1) + "k xp";
+    return n.toLocaleString() + " xp";
+  }
+  return n.toLocaleString() + " kc";
+}
+
+function PreviousWinnersRow({ sotwWinners, botwWinners }) {
+  if (!sotwWinners && !botwWinners) return null;
+  const medals = ["🥇", "🥈", "🥉"];
+
+  const renderMini = (winners, isSkill) => {
+    if (!winners) return null;
+    const top3 = (winners.participations ?? []).slice(0, 3);
+    const comp = winners.comp;
+    return (
+      <div className={`winner-card ${isSkill ? "winner-card--sky" : "winner-card--gold"}`}>
+        <div className="winner-card__header">
+          <span className="winner-card__icon">{isSkill ? "🎒" : "🐉"}</span>
+          <div>
+            <div className="winner-card__type">{isSkill ? "SOTW" : "BOTW"}</div>
+            <div className="winner-card__metric">{formatMetricName(comp.metric)}</div>
+          </div>
+          <span className="event-status event-status--finished">🏁 Finished</span>
+        </div>
+        <div className="podium-list">
+          {top3.map((p, i) => (
+            <div key={p.player?.displayName ?? i} className="podium-entry">
+              <span className="podium-medal">{medals[i]}</span>
+              <span className="podium-player">{p.player?.displayName ?? "—"}</span>
+              <span className="podium-gained">{formatGained(p.progress?.gained, isSkill)}</span>
+            </div>
+          ))}
+          {top3.length === 0 && <div className="podium-empty">No data yet.</div>}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ marginTop: "3rem" }}>
+      <div className="section-header" style={{ textAlign: "left", marginBottom: "1.5rem" }}>
+        <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: "14px", color: "var(--text-muted)" }}>
+          Last Week&apos;s Champions
+        </h3>
+      </div>
+      <div className="winners-grid">
+        {renderMini(sotwWinners, true)}
+        {renderMini(botwWinners, false)}
+      </div>
+    </div>
+  );
+}
+
+function EventsSection({ womComps, sotwWinners, botwWinners }) {
   const cards = [];
 
   const getPreferredCompetition = (predicate) => {
@@ -397,6 +456,7 @@ function EventsSection({ womComps }) {
           <p className="section-subtitle">
             Compete with your fellow Clickerz for glory and GP. Check Discord for details and to submit your scores.
           </p>
+          <p className="reset-note">🕗 Events reset every Monday at 8 PM EST</p>
         </div>
 
         <div className="events-grid">
@@ -453,6 +513,8 @@ function EventsSection({ womComps }) {
             </div>
           )}
         </div>
+
+        <PreviousWinnersRow sotwWinners={sotwWinners} botwWinners={botwWinners} />
       </div>
     </section>
   );
@@ -535,6 +597,12 @@ function LeaderboardSection({ leaderboard }) {
             </>
           )}
         </p>
+
+        <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+          <Link to="/leaderboards" className="button button--secondary">
+            See Full Leaderboards →
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -636,6 +704,8 @@ export default function Home() {
     error: false,
   });
   const [womComps, setWomComps] = useState([]);
+  const [sotwWinners, setSotwWinners] = useState(null);
+  const [botwWinners, setBotwWinners] = useState(null);
 
   // Discord widget
   useEffect(() => {
@@ -671,7 +741,28 @@ export default function Home() {
 
     fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/competitions?limit=20`)
       .then(r => r.json())
-      .then(comps => setWomComps(comps.filter(c => c.status === "ongoing" || c.status === "upcoming")))
+      .then(comps => {
+        const active = comps.filter(c => c.status === "ongoing" || c.status === "upcoming");
+        setWomComps(active);
+
+        const finished = comps.filter(c => c.status === "finished");
+        const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric) && c.metric !== "overall");
+        const lastBotw = finished.find(c => !WOM_SKILLS.has(c.metric));
+
+        const fetchWinners = async (comp, setter) => {
+          if (!comp) return;
+          try {
+            const res = await fetch(`https://api.wiseoldman.net/v2/competitions/${comp.id}`);
+            const detail = await res.json();
+            setter({ comp, participations: detail.participations ?? [] });
+          } catch {
+            setter({ comp, participations: [] });
+          }
+        };
+
+        fetchWinners(lastSotw, setSotwWinners);
+        fetchWinners(lastBotw, setBotwWinners);
+      })
       .catch(() => {});
   }, []);
 
@@ -680,7 +771,7 @@ export default function Home() {
       <HeroSection discordOnline={discordOnline} womMemberCount={womMemberCount} />
       <ValuesSection />
       <RulesSection />
-      <EventsSection womComps={womComps} />
+      <EventsSection womComps={womComps} sotwWinners={sotwWinners} botwWinners={botwWinners} />
       <LeaderboardSection leaderboard={leaderboard} />
       <DiscordSection discordOnline={discordOnline} />
       <JoinSection />

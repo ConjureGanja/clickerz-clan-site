@@ -5,7 +5,9 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Events from "./pages/Events";
 import Guides from "./pages/Guides";
+import GuidePost from "./pages/GuidePost";
 import Stats from "./pages/Stats";
+import Leaderboards from "./pages/Leaderboards";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -36,6 +38,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/events" element={<Events />} />
             <Route path="/guides" element={<Guides />} />
+            <Route path="/guides/:slug" element={<GuidePost />} />
+            <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/stats" element={<Stats />} />
           </Routes>
         </main>
