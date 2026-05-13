@@ -636,6 +636,12 @@ function JoinSection() {
     "Be respectful",
     "Have fun",
   ];
+  const recruitingFor = [
+    "Recruiters who can welcome and onboard new members",
+    "PvM-focused players for raids and group bossing events",
+    "Clan helpers and leadership support (assistants, managers, moderators)",
+    "Members who want to keep the clan efficient, active, and fun",
+  ];
 
   return (
     <section id="join" className="join-section">
@@ -649,6 +655,17 @@ function JoinSection() {
 
         <div className="requirements-list">
           {requirements.map((item) => (
+            <span key={item} className="requirement-pill">
+              ✓ {item}
+            </span>
+          ))}
+        </div>
+
+        <p className="join-subtitle" style={{ marginTop: "1.5rem", marginBottom: "0.75rem" }}>
+          We&apos;re currently recruiting for:
+        </p>
+        <div className="requirements-list">
+          {recruitingFor.map((item) => (
             <span key={item} className="requirement-pill">
               ✓ {item}
             </span>
