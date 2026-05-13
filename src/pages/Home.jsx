@@ -637,6 +637,49 @@ function JoinSection() {
     "Have fun",
   ];
 
+  // Open recruitment roles — update titles/descriptions as positions open or fill.
+  // To add a role: copy an object, change the fields, and add it to the array.
+  // To close a role: set open: false (it will still render but with a "Filled" badge).
+  const openRoles = [
+    {
+      icon: "⚔️",
+      title: "PvM & Raiding Members",
+      badge: "Wanted",
+      variant: "gold",  // gold = highlighted border
+      open: true,
+      description:
+        "We're building out a dedicated PvM core. If you're into bossing, " +
+        "raids (COX, TOB, TOA), or just love slaying tough content — you'll " +
+        "fit right in. We want people to help organise trips and teach others.",
+      // TODO: Update perks to reflect what the clan actually offers
+      perks: ["Group boss & raid trips", "Loot splits on masses", "Help newer members learn"],
+    },
+    {
+      icon: "📣",
+      title: "Recruiter",
+      badge: "Open",
+      variant: "sky",
+      open: true,
+      description:
+        "Be the face of Clickerz. Welcome new players, answer questions in CC " +
+        "and Discord, and help us grow the community the right way — with good vibes only.",
+      perks: ["Clan rank upgrade", "Help shape who joins"],
+    },
+    {
+      icon: "🛡️",
+      // TODO: Split into separate roles (Assistant, Manager, Mod) once the team is bigger
+      title: "Assistant / Manager / Mod",
+      badge: "Open",
+      variant: "sky",
+      open: true,
+      description:
+        "Help run the show. Organise events, keep Discord chill, and make sure " +
+        "Clickerz stays efficient and fun for everyone. We need people who genuinely " +
+        "care about the health of the clan — not just the grind.",
+      perks: ["Elevated clan rank", "Help plan events", "Shape clan direction"],
+    },
+  ];
+
   return (
     <section id="join" className="join-section">
       <div className="join-pattern" aria-hidden="true" />
@@ -647,6 +690,36 @@ function JoinSection() {
           No application fee. No 2000 total level requirement. Just be a decent human who likes clicking things.
         </p>
 
+        {/* ── Open Recruitment Roles ── */}
+        <div className="recruit-heading">
+          <span className="section-badge recruit-badge">Now Recruiting</span>
+          <p className="recruit-subtext">
+            All players are welcome, but we're especially looking to fill these roles right now.
+          </p>
+        </div>
+
+        <div className="recruit-grid">
+          {openRoles.map((role) => (
+            <div key={role.title} className={`recruit-card recruit-card--${role.variant}`}>
+              <div className="recruit-card__top">
+                <span className="recruit-card__icon" aria-hidden="true">{role.icon}</span>
+                <span className={`recruit-card__badge recruit-card__badge--${role.variant}`}>
+                  {role.open ? role.badge : "Filled"}
+                </span>
+              </div>
+              <h3 className="recruit-card__title">{role.title}</h3>
+              <p className="recruit-card__desc">{role.description}</p>
+              <ul className="recruit-card__perks" aria-label="Perks">
+                {role.perks.map((perk) => (
+                  <li key={perk}>✓ {perk}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* ── General Requirements ── */}
+        <p className="recruit-req-label">Requirements for all members:</p>
         <div className="requirements-list">
           {requirements.map((item) => (
             <span key={item} className="requirement-pill">

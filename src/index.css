@@ -1485,3 +1485,143 @@ code {
     width: 100%;
   }
 }
+
+
+/* ── Recruitment roles (JoinSection) ─────────────────────────
+   These styles extend the existing join-section with role cards.
+   To change card accent colours update the --variant tokens in
+   the .recruit-card--gold / --sky rules below.
+   ──────────────────────────────────────────────────────────── */
+
+.recruit-heading {
+  margin: 3.5rem 0 2rem;
+}
+
+/* "Now Recruiting" pill — reuses .section-badge base styles */
+.recruit-badge {
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.22);
+}
+
+.recruit-subtext {
+  max-width: 520px;
+  margin: 0.85rem auto 0;
+  color: var(--text-soft);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* Three-column grid, stacks to one column on mobile */
+.recruit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  text-align: left;
+}
+
+/* Base card */
+.recruit-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Gold variant — for high-priority / "Wanted" roles */
+.recruit-card--gold {
+  border-color: rgba(255, 215, 0, 0.18);
+  background: linear-gradient(160deg, var(--bg-card) 0%, rgba(255, 215, 0, 0.04) 100%);
+}
+
+.recruit-card--gold:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 215, 0, 0.38);
+  box-shadow: 0 10px 32px rgba(255, 215, 0, 0.1);
+}
+
+/* Sky variant — for standard open roles */
+.recruit-card--sky:hover {
+  transform: translateY(-3px);
+  border-color: rgba(135, 206, 235, 0.3);
+  box-shadow: 0 10px 32px rgba(135, 206, 235, 0.08);
+}
+
+.recruit-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.recruit-card__icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+/* Status badge on each card */
+.recruit-card__badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.recruit-card__badge--gold {
+  color: var(--gold);
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+}
+
+.recruit-card__badge--sky {
+  color: var(--sky);
+  background: rgba(135, 206, 235, 0.1);
+  border: 1px solid rgba(135, 206, 235, 0.22);
+}
+
+.recruit-card__title {
+  font-family: "Nunito", sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 0.5rem;
+}
+
+.recruit-card__desc {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.75;
+  margin: 0 0 0.9rem;
+}
+
+/* Perks list inside each card */
+.recruit-card__perks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 1px solid rgba(135, 206, 235, 0.07);
+  padding-top: 0.85rem;
+}
+
+.recruit-card__perks li {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sky);
+}
+
+/* "Requirements for all members:" label */
+.recruit-req-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 1rem;
+}
