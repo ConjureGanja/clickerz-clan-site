@@ -1,4 +1,5 @@
 export const WOM_BASE = "https://api.wiseoldman.net/v2";
+export const WOM_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 function withSearchParams(path, params = {}) {
   const url = new URL(`${WOM_BASE}${path}`);
@@ -73,12 +74,16 @@ export function getGainedValue(entry, metric) {
   );
 }
 
-export function formatAchievementName(achievement) {
-  const raw = achievement?.name ?? achievement?.type ?? achievement?.metric;
-  if (!raw) return "Milestone";
-  return raw
+export function formatLabel(value, fallback = "") {
+  if (!value) return fallback;
+  return String(value)
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function getAchievementDisplayName(achievement) {
+  const raw = achievement?.name ?? achievement?.type ?? achievement?.metric;
+  return formatLabel(raw, "Milestone");
 }
 
 export async function fetchGroup(groupId, fetchOptions = {}) {
@@ -163,7 +168,7 @@ export function formatGained(value, isSkill) {
 export async function fetchCompetitionWinners(competition) {
   try {
     const detail = await womGet(`/competitions/${competition.id}`);
-    return { comp: competition, participations: asArray(detail?.participations ?? []) };
+    return { comp: competition, participations: detail?.participations ?? [] };
   } catch {
     return { comp: competition, participations: [] };
   }

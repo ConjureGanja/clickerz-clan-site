@@ -8,12 +8,12 @@ import {
   formatGained,
   getHiscoreValue,
   getPlayerDisplayName,
+  WOM_REFRESH_INTERVAL_MS,
 } from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
 
 const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 const SITE_LINKS = {
   discord: "https://discord.gg/cju3DSSdju",
@@ -777,7 +777,7 @@ export default function Home() {
     };
 
     loadWomStats();
-    const refreshTimer = setInterval(loadWomStats, REFRESH_INTERVAL_MS);
+    const refreshTimer = setInterval(loadWomStats, WOM_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(refreshTimer);

@@ -3,11 +3,11 @@ import {
   fetchCompetitionWinners,
   fetchGroupCompetitions,
   formatGained,
+  WOM_REFRESH_INTERVAL_MS,
 } from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
 
 const WOM_GROUP_ID = 21596;
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 const WOM_SKILLS = new Set([
   "overall", "attack", "defence", "strength", "hitpoints", "ranged",
@@ -115,7 +115,7 @@ export default function Events() {
     };
 
     loadCompetitions();
-    const refreshTimer = setInterval(loadCompetitions, REFRESH_INTERVAL_MS);
+    const refreshTimer = setInterval(loadCompetitions, WOM_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(refreshTimer);

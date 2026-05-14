@@ -3,13 +3,13 @@ import {
   fetchGroupAchievements,
   fetchGroupGains,
   fetchGroupRecords,
-  formatAchievementName,
+  getAchievementDisplayName,
   getGainedValue,
   getPlayerDisplayName,
+  WOM_REFRESH_INTERVAL_MS,
 } from "../utils/wom";
 
 const WOM_GROUP_ID = 21596;
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 function SectionBadge({ children, tone = "sky" }) {
   const tones = {
@@ -53,7 +53,7 @@ export default function Stats() {
     };
 
     fetchData();
-    const refreshTimer = setInterval(fetchData, REFRESH_INTERVAL_MS);
+    const refreshTimer = setInterval(fetchData, WOM_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(refreshTimer);
@@ -92,22 +92,23 @@ export default function Stats() {
               {loading ? (
                 <div className="leaderboard-loading">Loading achievements...</div>
               ) : achievements.length > 0 ? (
-                achievements.map((ach, i) => (
-                  <div key={i} className="leaderboard-row">
-                    <div className="leaderboard-icon">🏆</div>
+                achievements.map((ach, i) => {
+                  const achDate = ach.createdAt ?? ach.updatedAt;
+                  return (
+                    <div key={i} className="leaderboard-row">
+                      <div className="leaderboard-icon">🏆</div>
                       <div className="leaderboard-name" style={{ fontSize: '14px' }}>
                         {getPlayerDisplayName(ach)}
                         <div style={{ fontSize: '11px', color: 'var(--text-soft)', fontWeight: 400 }}>
-                          {formatAchievementName(ach)}
+                          {getAchievementDisplayName(ach)}
                         </div>
                       </div>
                       <div className="leaderboard-value" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                        {ach.createdAt || ach.updatedAt
-                          ? new Date(ach.createdAt ?? ach.updatedAt).toLocaleDateString()
-                          : "—"}
+                        {achDate ? new Date(achDate).toLocaleDateString() : "—"}
                       </div>
                     </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="leaderboard-loading">No recent achievements found.</div>
               )}

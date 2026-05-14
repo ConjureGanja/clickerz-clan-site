@@ -7,14 +7,14 @@ import {
   fetchGroupGains,
   fetchGroupHiscores,
   fetchGroupRecords,
-  formatAchievementName,
+  getAchievementDisplayName,
   getGainedValue,
   getHiscoreValue,
   getPlayerDisplayName,
+  WOM_REFRESH_INTERVAL_MS,
 } from "../utils/wom";
 
 const WOM_GROUP_ID = 21596;
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 function formatValue(val, suffix = "") {
   if (val === null || val === undefined) return "—";
@@ -198,7 +198,7 @@ export default function Leaderboards() {
     };
 
     loadWomData();
-    const refreshTimer = setInterval(loadWomData, REFRESH_INTERVAL_MS);
+    const refreshTimer = setInterval(loadWomData, WOM_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(refreshTimer);
@@ -370,22 +370,23 @@ export default function Leaderboards() {
               ) : achievements.length === 0 ? (
                 <div className="leaderboard-loading">No recent achievements found.</div>
               ) : (
-                achievements.map((ach, i) => (
+                achievements.map((ach, i) => {
+                  const achDate = ach.createdAt ?? ach.updatedAt;
+                  return (
                     <div key={i} className="leaderboard-row" style={{ gridTemplateColumns: "36px 1fr auto" }}>
                       <div className="leaderboard-icon">🏆</div>
                       <div className="leaderboard-name" style={{ fontSize: "14px" }}>
                         {getPlayerDisplayName(ach)}
                         <div style={{ fontSize: "11px", color: "var(--text-soft)", fontWeight: 400, marginTop: "2px" }}>
-                          {formatAchievementName(ach)}
+                          {getAchievementDisplayName(ach)}
                         </div>
                       </div>
                       <div style={{ fontSize: "10px", color: "var(--text-muted)", textAlign: "right", whiteSpace: "nowrap" }}>
-                        {ach.createdAt || ach.updatedAt
-                          ? new Date(ach.createdAt ?? ach.updatedAt).toLocaleDateString()
-                          : "—"}
+                        {achDate ? new Date(achDate).toLocaleDateString() : "—"}
                       </div>
                     </div>
-                  ))
+                  );
+                })
               )}
             </div>
 
