@@ -714,7 +714,7 @@ function JoinSection() {
               <p className="recruit-card__desc">{role.description}</p>
               <ul className="recruit-card__perks" aria-label="Perks">
                 {role.perks.map((perk, perkIndex) => (
-                  <li key={`${role.title}-perk-${perkIndex}`}>✓ {perk}</li>
+                  <li key={`${role.id}-perk-${perkIndex}`}>✓ {perk}</li>
                 ))}
               </ul>
             </div>
