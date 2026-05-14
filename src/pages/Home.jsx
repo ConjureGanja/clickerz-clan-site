@@ -642,6 +642,7 @@ function JoinSection() {
   // To close a role: set open: false (it will still render but with a "Filled" badge).
   const openRoles = [
     {
+      id: "pvm-raiding-members",
       icon: "⚔️",
       title: "PvM & Raiding Members",
       badge: "Wanted",
@@ -655,6 +656,7 @@ function JoinSection() {
       perks: ["Group boss & raid trips", "Loot splits on masses", "Help newer members learn"],
     },
     {
+      id: "recruiter",
       icon: "📣",
       title: "Recruiter",
       badge: "Open",
@@ -666,6 +668,7 @@ function JoinSection() {
       perks: ["Clan rank upgrade", "Help shape who joins"],
     },
     {
+      id: "assistant-manager-mod",
       icon: "🛡️",
       // TODO: Split into separate roles (Assistant, Manager, Mod) once the team is bigger
       title: "Assistant / Manager / Mod",
@@ -700,7 +703,7 @@ function JoinSection() {
 
         <div className="recruit-grid">
           {openRoles.map((role) => (
-            <div key={role.title} className={`recruit-card recruit-card--${role.variant}`}>
+            <div key={role.id} className={`recruit-card recruit-card--${role.variant}`}>
               <div className="recruit-card__top">
                 <span className="recruit-card__icon" aria-hidden="true">{role.icon}</span>
                 <span className={`recruit-card__badge recruit-card__badge--${role.variant}`}>
