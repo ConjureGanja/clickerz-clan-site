@@ -1489,8 +1489,8 @@ code {
 
 /* ── Recruitment roles (JoinSection) ─────────────────────────
    These styles extend the existing join-section with role cards.
-   To change card accent colours update the --variant tokens in
-   the .recruit-card--gold / --sky rules below.
+   To change card accent colours, update the hard-coded accent
+   values in the .recruit-card--gold / --sky rules below.
    ──────────────────────────────────────────────────────────── */
 
 .recruit-heading {
