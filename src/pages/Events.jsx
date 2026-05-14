@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
-import { formatGained, fetchCompetitionWinners } from "../utils/wom";
+import {
+  fetchCompetitionWinners,
+  fetchGroupCompetitions,
+  formatGained,
+} from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
 
 const WOM_GROUP_ID = 21596;
-const WOM_BASE = "https://api.wiseoldman.net/v2";
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 const WOM_SKILLS = new Set([
   "overall", "attack", "defence", "strength", "hitpoints", "ranged",
@@ -81,22 +85,41 @@ export default function Events() {
   const [botwWinners, setBotwWinners] = useState(null);
 
   useEffect(() => {
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/competitions?limit=20`)
-      .then((r) => r.json())
-      .then((data) => {
+    let cancelled = false;
+
+    const loadCompetitions = async () => {
+      try {
+        const data = await fetchGroupCompetitions(WOM_GROUP_ID, 20);
+        if (cancelled) return;
+
         setComps(data);
         setLoading(false);
 
         const finished = data.filter((c) => c.status === "finished");
-        const lastSotw = finished.find(
-          (c) => WOM_SKILLS.has(c.metric)
-        );
+        const lastSotw = finished.find((c) => WOM_SKILLS.has(c.metric));
         const lastBotw = finished.find((c) => !WOM_SKILLS.has(c.metric));
 
-        if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
-        if (lastBotw) fetchCompetitionWinners(lastBotw).then(setBotwWinners);
-      })
-      .catch(() => setLoading(false));
+        if (lastSotw) {
+          fetchCompetitionWinners(lastSotw).then((result) => {
+            if (!cancelled) setSotwWinners(result);
+          });
+        }
+        if (lastBotw) {
+          fetchCompetitionWinners(lastBotw).then((result) => {
+            if (!cancelled) setBotwWinners(result);
+          });
+        }
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadCompetitions();
+    const refreshTimer = setInterval(loadCompetitions, REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(refreshTimer);
+    };
   }, []);
 
   const ongoing = comps.filter((c) => c.status === "ongoing");

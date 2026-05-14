@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatGained, fetchCompetitionWinners } from "../utils/wom";
+import {
+  fetchCompetitionWinners,
+  fetchGroup,
+  fetchGroupCompetitions,
+  fetchGroupHiscores,
+  formatGained,
+  getHiscoreValue,
+  getPlayerDisplayName,
+} from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
 
 const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 const SITE_LINKS = {
   discord: "https://discord.gg/cju3DSSdju",
@@ -707,42 +716,72 @@ export default function Home() {
 
   // WOM stats
   useEffect(() => {
-    fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`)
-      .then((r) => r.json())
-      .then((g) => setWomMemberCount(g.memberCount))
-      .catch(() => {});
+    let cancelled = false;
 
-    Promise.allSettled([
-      fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=10`).then(r => r.json()),
-      fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=10`).then(r => r.json())
-    ]).then(([skillsResult, bossesResult]) => {
-      const skills = skillsResult.status === "fulfilled" ? skillsResult.value.map((entry, i) => ({
-        rank: i + 1,
-        name: entry.player.displayName,
-        value: (entry.data.level ?? 0).toLocaleString(),
-      })) : [];
-      const bosses = bossesResult.status === "fulfilled" ? bossesResult.value.map((entry, i) => ({
-        rank: i + 1,
-        name: entry.player.displayName,
-        value: `${Math.round(entry.data.value).toLocaleString()} EHB`,
-      })) : [];
-      setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
-    });
+    const loadWomStats = async () => {
+      const [groupResult, skillsResult, bossesResult, compsResult] = await Promise.allSettled([
+        fetchGroup(WOM_GROUP_ID),
+        fetchGroupHiscores(WOM_GROUP_ID, "overall", 10),
+        fetchGroupHiscores(WOM_GROUP_ID, "ehb", 10),
+        fetchGroupCompetitions(WOM_GROUP_ID, 20),
+      ]);
 
-    fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/competitions?limit=20`)
-      .then(r => r.json())
-      .then(comps => {
-        const active = comps.filter(c => c.status === "ongoing" || c.status === "upcoming");
+      if (cancelled) return;
+
+      if (groupResult.status === "fulfilled") {
+        setWomMemberCount(groupResult.value?.memberCount ?? null);
+      }
+
+      const skills = skillsResult.status === "fulfilled"
+        ? skillsResult.value.map((entry, i) => ({
+            rank: i + 1,
+            name: getPlayerDisplayName(entry),
+            value: Math.round(getHiscoreValue(entry, "overall")).toLocaleString(),
+          }))
+        : [];
+
+      const bosses = bossesResult.status === "fulfilled"
+        ? bossesResult.value.map((entry, i) => ({
+            rank: i + 1,
+            name: getPlayerDisplayName(entry),
+            value: `${Math.round(getHiscoreValue(entry, "ehb")).toLocaleString()} EHB`,
+          }))
+        : [];
+
+      setLeaderboard({
+        data: { skills, bosses },
+        loading: false,
+        error: skills.length === 0 && bosses.length === 0,
+      });
+
+      if (compsResult.status === "fulfilled") {
+        const comps = compsResult.value;
+        const active = comps.filter((c) => c.status === "ongoing" || c.status === "upcoming");
         setWomComps(active);
 
-        const finished = comps.filter(c => c.status === "finished");
-        const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric));
-        const lastBotw = finished.find(c => !WOM_SKILLS.has(c.metric));
+        const finished = comps.filter((c) => c.status === "finished");
+        const lastSotw = finished.find((c) => WOM_SKILLS.has(c.metric));
+        const lastBotw = finished.find((c) => !WOM_SKILLS.has(c.metric));
 
-        if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
-        if (lastBotw) fetchCompetitionWinners(lastBotw).then(setBotwWinners);
-      })
-      .catch(() => {});
+        if (lastSotw) {
+          fetchCompetitionWinners(lastSotw).then((result) => {
+            if (!cancelled) setSotwWinners(result);
+          });
+        }
+        if (lastBotw) {
+          fetchCompetitionWinners(lastBotw).then((result) => {
+            if (!cancelled) setBotwWinners(result);
+          });
+        }
+      }
+    };
+
+    loadWomStats();
+    const refreshTimer = setInterval(loadWomStats, REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(refreshTimer);
+    };
   }, []);
 
   return (

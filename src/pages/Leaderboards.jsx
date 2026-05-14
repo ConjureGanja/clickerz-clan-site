@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import SectionBadge from "../components/SectionBadge";
+import {
+  fetchGroup,
+  fetchGroupAchievements,
+  fetchGroupGains,
+  fetchGroupHiscores,
+  fetchGroupRecords,
+  formatAchievementName,
+  getGainedValue,
+  getHiscoreValue,
+  getPlayerDisplayName,
+} from "../utils/wom";
 
 const WOM_GROUP_ID = 21596;
-const WOM_BASE = "https://api.wiseoldman.net/v2";
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 function formatValue(val, suffix = "") {
   if (val === null || val === undefined) return "—";
@@ -91,75 +102,107 @@ export default function Leaderboards() {
   const [groupInfo, setGroupInfo] = useState(null);
 
   useEffect(() => {
-    // Group info
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}`)
-      .then((r) => r.json())
-      .then(setGroupInfo)
-      .catch(() => {});
+    let cancelled = false;
 
-    // Hiscores
-    Promise.allSettled([
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=15`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=15`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=ehp&limit=15`).then((r) => r.json()),
-    ]).then(([overall, ehb, ehp]) => {
+    const loadWomData = async () => {
+      const [
+        groupResult,
+        overallResult,
+        ehbResult,
+        ehpResult,
+        wXPResult,
+        wEHBResult,
+        mXPResult,
+        mEHBResult,
+        achievementsResult,
+        recordsResult,
+      ] = await Promise.allSettled([
+        fetchGroup(WOM_GROUP_ID),
+        fetchGroupHiscores(WOM_GROUP_ID, "overall", 15),
+        fetchGroupHiscores(WOM_GROUP_ID, "ehb", 15),
+        fetchGroupHiscores(WOM_GROUP_ID, "ehp", 15),
+        fetchGroupGains(WOM_GROUP_ID, { period: "week", metric: "overall", limit: 10 }),
+        fetchGroupGains(WOM_GROUP_ID, { period: "week", metric: "ehb", limit: 10 }),
+        fetchGroupGains(WOM_GROUP_ID, { period: "month", metric: "overall", limit: 10 }),
+        fetchGroupGains(WOM_GROUP_ID, { period: "month", metric: "ehb", limit: 10 }),
+        fetchGroupAchievements(WOM_GROUP_ID, 20),
+        fetchGroupRecords(WOM_GROUP_ID, { period: "week", limit: 10 }),
+      ]);
+
+      if (cancelled) return;
+
+      if (groupResult.status === "fulfilled") {
+        setGroupInfo(groupResult.value);
+      }
+
       setHiscores({
-        overall: overall.status === "fulfilled"
-          ? overall.value.map((e, i) => ({ rank: i + 1, name: e.player.displayName, value: (e.data.level ?? 0).toLocaleString() }))
+        overall: overallResult.status === "fulfilled"
+          ? overallResult.value.map((e, i) => ({
+              rank: i + 1,
+              name: getPlayerDisplayName(e),
+              value: Math.round(getHiscoreValue(e, "overall")).toLocaleString(),
+            }))
           : [],
-        ehb: ehb.status === "fulfilled"
-          ? ehb.value.map((e, i) => ({ rank: i + 1, name: e.player.displayName, value: `${Math.round(e.data.value ?? 0).toLocaleString()} EHB` }))
+        ehb: ehbResult.status === "fulfilled"
+          ? ehbResult.value.map((e, i) => ({
+              rank: i + 1,
+              name: getPlayerDisplayName(e),
+              value: `${Math.round(getHiscoreValue(e, "ehb")).toLocaleString()} EHB`,
+            }))
           : [],
-        ehp: ehp.status === "fulfilled"
-          ? ehp.value.map((e, i) => ({ rank: i + 1, name: e.player.displayName, value: `${Math.round(e.data.value ?? 0).toLocaleString()} EHP` }))
+        ehp: ehpResult.status === "fulfilled"
+          ? ehpResult.value.map((e, i) => ({
+              rank: i + 1,
+              name: getPlayerDisplayName(e),
+              value: `${Math.round(getHiscoreValue(e, "ehp")).toLocaleString()} EHP`,
+            }))
           : [],
       });
       setHiscoresLoading(false);
-    });
 
-    // Gainers
-    Promise.allSettled([
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=week&metric=overall&limit=10`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=week&metric=ehb&limit=10`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=month&metric=overall&limit=10`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=month&metric=ehb&limit=10`).then((r) => r.json()),
-    ]).then(([wXP, wEHB, mXP, mEHB]) => {
-      const toRows = (result) =>
+      const toRows = (result, metric) =>
         result.status === "fulfilled"
-          ? result.value.map((e, i) => ({
-              rank: i + 1,
-              name: e.player.displayName,
-              rawGained: e.data.gained ?? 0,
-              value: formatValue(e.data.gained),
-              change: formatValue(e.data.gained),
-            }))
+          ? result.value.map((e, i) => {
+              const gained = Number(getGainedValue(e, metric)) || 0;
+              return {
+                rank: i + 1,
+                name: getPlayerDisplayName(e),
+                rawGained: gained,
+                value: formatValue(gained),
+                change: formatValue(gained),
+              };
+            })
           : [];
+
       setGainers({
-        weekXP: toRows(wXP),
-        weekEHB: toRows(wEHB),
-        monthXP: toRows(mXP),
-        monthEHB: toRows(mEHB),
+        weekXP: toRows(wXPResult, "overall"),
+        weekEHB: toRows(wEHBResult, "ehb"),
+        monthXP: toRows(mXPResult, "overall"),
+        monthEHB: toRows(mEHBResult, "ehb"),
       });
       setGainersLoading(false);
-    });
 
-    // Achievements
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/achievements?limit=20`)
-      .then((r) => r.json())
-      .then((data) => {
-        setAchievements(Array.isArray(data) ? data : []);
-        setAchLoading(false);
-      })
-      .catch(() => setAchLoading(false));
+      setAchievements(
+        achievementsResult.status === "fulfilled"
+          ? achievementsResult.value
+          : []
+      );
+      setAchLoading(false);
 
-    // Records
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/records?period=week&limit=10`)
-      .then((r) => r.json())
-      .then((data) => {
-        setRecords(Array.isArray(data) ? data : []);
-        setRecordsLoading(false);
-      })
-      .catch(() => setRecordsLoading(false));
+      setRecords(
+        recordsResult.status === "fulfilled"
+          ? recordsResult.value
+          : []
+      );
+      setRecordsLoading(false);
+    };
+
+    loadWomData();
+    const refreshTimer = setInterval(loadWomData, REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(refreshTimer);
+    };
   }, []);
 
   // Derive fun stats using raw numeric values stored alongside the formatted strings
@@ -328,19 +371,21 @@ export default function Leaderboards() {
                 <div className="leaderboard-loading">No recent achievements found.</div>
               ) : (
                 achievements.map((ach, i) => (
-                  <div key={i} className="leaderboard-row" style={{ gridTemplateColumns: "36px 1fr auto" }}>
-                    <div className="leaderboard-icon">🏆</div>
-                    <div className="leaderboard-name" style={{ fontSize: "14px" }}>
-                      {ach.player.displayName}
-                      <div style={{ fontSize: "11px", color: "var(--text-soft)", fontWeight: 400, marginTop: "2px" }}>
-                        {ach.name}
+                    <div key={i} className="leaderboard-row" style={{ gridTemplateColumns: "36px 1fr auto" }}>
+                      <div className="leaderboard-icon">🏆</div>
+                      <div className="leaderboard-name" style={{ fontSize: "14px" }}>
+                        {getPlayerDisplayName(ach)}
+                        <div style={{ fontSize: "11px", color: "var(--text-soft)", fontWeight: 400, marginTop: "2px" }}>
+                          {formatAchievementName(ach)}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", textAlign: "right", whiteSpace: "nowrap" }}>
+                        {ach.createdAt || ach.updatedAt
+                          ? new Date(ach.createdAt ?? ach.updatedAt).toLocaleDateString()
+                          : "—"}
                       </div>
                     </div>
-                    <div style={{ fontSize: "10px", color: "var(--text-muted)", textAlign: "right", whiteSpace: "nowrap" }}>
-                      {new Date(ach.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))
+                  ))
               )}
             </div>
 
@@ -361,9 +406,9 @@ export default function Leaderboards() {
                     <div className="leaderboard-rank">{i + 1}</div>
                     <div className="leaderboard-icon">📈</div>
                     <div className="leaderboard-name" style={{ fontSize: "14px" }}>
-                      {rec.player.displayName}
+                      {getPlayerDisplayName(rec)}
                       <div style={{ fontSize: "11px", color: "var(--text-soft)", fontWeight: 400, marginTop: "2px" }}>
-                        {rec.metric.replace(/_/g, " ")}
+                        {(rec.metric ?? "overall").replace(/_/g, " ")}
                       </div>
                     </div>
                     <div className="leaderboard-value">

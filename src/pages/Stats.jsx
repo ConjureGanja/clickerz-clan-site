@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
+import {
+  fetchGroupAchievements,
+  fetchGroupGains,
+  fetchGroupRecords,
+  formatAchievementName,
+  getGainedValue,
+  getPlayerDisplayName,
+} from "../utils/wom";
 
 const WOM_GROUP_ID = 21596;
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 function SectionBadge({ children, tone = "sky" }) {
   const tones = {
@@ -27,29 +36,28 @@ export default function Stats() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
-      try {
-        const [achRes, recRes, gainRes] = await Promise.all([
-          fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/achievements?limit=10`),
-          fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/records?limit=10&period=week`),
-          fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/gains?limit=10&period=week&metric=overall`)
-        ]);
+      const [achResult, recResult, gainResult] = await Promise.allSettled([
+        fetchGroupAchievements(WOM_GROUP_ID, 10),
+        fetchGroupRecords(WOM_GROUP_ID, { period: "week", limit: 10 }),
+        fetchGroupGains(WOM_GROUP_ID, { period: "week", metric: "overall", limit: 10 }),
+      ]);
 
-        const achData = await achRes.json();
-        const recData = await recRes.json();
-        const gainData = await gainRes.json();
-
-        setAchievements(achData);
-        setRecords(recData);
-        setGains(gainData);
-      } catch (error) {
-        console.error("Error fetching WOM stats:", error);
-      } finally {
-        setLoading(false);
-      }
+      if (cancelled) return;
+      setAchievements(achResult.status === "fulfilled" ? achResult.value : []);
+      setRecords(recResult.status === "fulfilled" ? recResult.value : []);
+      setGains(gainResult.status === "fulfilled" ? gainResult.value : []);
+      setLoading(false);
     };
 
     fetchData();
+    const refreshTimer = setInterval(fetchData, REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(refreshTimer);
+    };
   }, []);
 
   const formatValue = (val) => {
@@ -87,16 +95,18 @@ export default function Stats() {
                 achievements.map((ach, i) => (
                   <div key={i} className="leaderboard-row">
                     <div className="leaderboard-icon">🏆</div>
-                    <div className="leaderboard-name" style={{ fontSize: '14px' }}>
-                      {ach.player.displayName}
-                      <div style={{ fontSize: '11px', color: 'var(--text-soft)', fontWeight: 400 }}>
-                        {ach.name}
+                      <div className="leaderboard-name" style={{ fontSize: '14px' }}>
+                        {getPlayerDisplayName(ach)}
+                        <div style={{ fontSize: '11px', color: 'var(--text-soft)', fontWeight: 400 }}>
+                          {formatAchievementName(ach)}
+                        </div>
+                      </div>
+                      <div className="leaderboard-value" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                        {ach.createdAt || ach.updatedAt
+                          ? new Date(ach.createdAt ?? ach.updatedAt).toLocaleDateString()
+                          : "—"}
                       </div>
                     </div>
-                    <div className="leaderboard-value" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {new Date(ach.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
                 ))
               ) : (
                 <div className="leaderboard-loading">No recent achievements found.</div>
@@ -117,9 +127,9 @@ export default function Stats() {
                   <div key={i} className="leaderboard-row">
                     <div className="leaderboard-rank">{i + 1}</div>
                     <div className="leaderboard-name" style={{ fontSize: '14px' }}>
-                      {rec.player.displayName}
+                      {getPlayerDisplayName(rec)}
                       <div style={{ fontSize: '11px', color: 'var(--text-soft)', fontWeight: 400 }}>
-                        {rec.metric.replace(/_/g, ' ')}
+                        {(rec.metric ?? "overall").replace(/_/g, ' ')}
                       </div>
                     </div>
                     <div className="leaderboard-value">
@@ -147,10 +157,10 @@ export default function Stats() {
                   <div key={i} className="leaderboard-row" style={{ borderRight: i % 2 === 0 ? '1px solid var(--border)' : 'none' }}>
                     <div className="leaderboard-rank">{i + 1}</div>
                     <div className="leaderboard-name">
-                      {gain.player.displayName}
+                      {getPlayerDisplayName(gain)}
                     </div>
                     <div className="leaderboard-change">
-                      ▲ {formatValue(gain.data.gained)}
+                      ▲ {formatValue(getGainedValue(gain, "overall"))}
                     </div>
                   </div>
                 ))}
