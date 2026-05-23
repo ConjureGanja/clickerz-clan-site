@@ -511,7 +511,7 @@ function LeaderboardSection({ leaderboard }) {
         <div className="section-header">
           <SectionBadge tone="gold">Leaderboards</SectionBadge>
           <h2 className="section-title">Top Clickers</h2>
-          <p className="section-subtitle">Our finest Clickerz — live from Wise Old Man.</p>
+          <p className="section-subtitle">Our finest Clickerz — live from Wise Old Man, with deeper progress spotlights on the full boards.</p>
         </div>
 
         <div className="tab-switcher">

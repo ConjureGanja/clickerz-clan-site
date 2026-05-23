@@ -1,45 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import SectionBadge from "../components/SectionBadge";
+import {
+  describeClanActivity,
+  fetchLeaderboardSnapshot,
+  formatCompactNumber,
+  formatMetricName,
+  formatPercentage,
+  formatRelativeTime,
+  RUNEPROFILE_SITE,
+  WOM_GROUP_ID,
+} from "../utils/leaderboards";
 
-const WOM_GROUP_ID = 21596;
-const WOM_BASE = "https://api.wiseoldman.net/v2";
-
-function formatValue(val, suffix = "") {
-  if (val === null || val === undefined) return "—";
-  const n = Number(val);
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M" + suffix;
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "k" + suffix;
-  return n.toLocaleString() + suffix;
-}
-
-function rankIcon(rank) {
+function rankIcon(rank, fallback = "⚔️") {
   if (rank === 1) return "🥇";
   if (rank === 2) return "🥈";
   if (rank === 3) return "🥉";
-  return null;
+  return fallback;
 }
 
-function LeaderboardTable({ rows, loading, emptyMsg, valueLabel }) {
+function LeaderboardTable({ rows, loading, emptyMsg, fallbackIcon = "⚔️" }) {
   if (loading) {
-    return <div className="leaderboard-loading">Loading from Wise Old Man…</div>;
+    return <div className="leaderboard-loading">Loading leaderboard…</div>;
   }
+
   if (!rows || rows.length === 0) {
     return <div className="leaderboard-loading">{emptyMsg ?? "No data available."}</div>;
   }
+
   return (
     <div>
-      {rows.map((row, i) => (
+      {rows.map((row, index) => (
         <div
-          key={row.name + i}
-          className={i === 0 ? "leaderboard-row leaderboard-row--first" : "leaderboard-row"}
+          key={`${row.name}-${row.rank}-${index}`}
+          className={index === 0 ? "leaderboard-row leaderboard-row--first" : "leaderboard-row"}
         >
           <div className="leaderboard-rank">{row.rank}</div>
-          <div className="leaderboard-icon">{rankIcon(row.rank) ?? (valueLabel === "EHB" ? "🐉" : "⚔️")}</div>
+          <div className="leaderboard-icon">{rankIcon(row.rank, fallbackIcon)}</div>
           <div className="leaderboard-name">{row.name}</div>
-          {row.change != null && (
-            <div className="leaderboard-change">▲ {row.change}</div>
-          )}
+          <div className="leaderboard-change">{row.change ?? ""}</div>
           <div className="leaderboard-value">{row.value}</div>
         </div>
       ))}
@@ -47,186 +46,276 @@ function LeaderboardTable({ rows, loading, emptyMsg, valueLabel }) {
   );
 }
 
-function TabPanel({ tabs, activeTab, setActiveTab, children }) {
+function TabPanel({ tabs, activeTab, onChange }) {
   return (
-    <>
-      <div className="tab-switcher">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            className={activeTab === tab.key ? "tab-button tab-button--active" : "tab-button"}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      {children}
-    </>
+    <div className="tab-switcher">
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          className={activeTab === tab.key ? "tab-button tab-button--active" : "tab-button"}
+          onClick={() => onChange(tab.key)}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
-export default function Leaderboards() {
-  // ── Top Members (hiscores) ──────────────────────────
-  const [hiscores, setHiscores] = useState({ overall: [], ehb: [], ehp: [] });
-  const [hiscoresLoading, setHiscoresLoading] = useState(true);
-  const [hiscoresTab, setHiscoresTab] = useState("overall");
+function InsightBoard({ title, icon, rows, loading, emptyMessage, accent = "var(--sky)" }) {
+  return (
+    <div className="leaderboard-card">
+      <div className="leaderboard-card__header">
+        <h3 className="leaderboard-card__title" style={{ color: accent }}>
+          <span>{icon}</span>
+          {title}
+        </h3>
+      </div>
+      {loading ? (
+        <div className="leaderboard-loading">Loading RuneProfile insights…</div>
+      ) : rows.length === 0 ? (
+        <div className="leaderboard-loading">{emptyMessage}</div>
+      ) : (
+        rows.map((row, index) => (
+          <div
+            key={`${title}-${row.name}-${index}`}
+            className={index === 0 ? "leaderboard-insight leaderboard-insight--first" : "leaderboard-insight"}
+          >
+            <div className="leaderboard-insight__rank">{row.rank}</div>
+            <div className="leaderboard-insight__content">
+              <div className="leaderboard-insight__name">{row.name}</div>
+              <div className="leaderboard-insight__meta">{row.meta}</div>
+            </div>
+            <div className="leaderboard-insight__value">{row.value}</div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
 
-  // ── Gainers ─────────────────────────────────────────
-  const [gainers, setGainers] = useState({ weekXP: [], weekEHB: [], monthXP: [], monthEHB: [] });
-  const [gainersLoading, setGainersLoading] = useState(true);
+function ActivityFeed({ activities, loading }) {
+  return (
+    <div className="leaderboard-card" style={{ marginTop: "1.5rem" }}>
+      <div className="leaderboard-card__header">
+        <h3 className="leaderboard-card__title" style={{ color: "var(--purple)" }}>
+          <span>🛰️</span>
+          RuneProfile Highlights
+        </h3>
+      </div>
+      {loading ? (
+        <div className="leaderboard-loading">Loading RuneProfile activity…</div>
+      ) : activities.length === 0 ? (
+        <div className="leaderboard-loading">No recent RuneProfile activity found for the clan.</div>
+      ) : (
+        activities.map((activity, index) => {
+          const description = describeClanActivity(activity);
+
+          return (
+            <div
+              key={`${activity.account.username}-${activity.type}-${activity.createdAt}-${index}`}
+              className={index === 0 ? "leaderboard-activity leaderboard-activity--first" : "leaderboard-activity"}
+            >
+              <div className="leaderboard-activity__icon">{description.icon}</div>
+              <div className="leaderboard-activity__content">
+                <div className="leaderboard-activity__title">
+                  {activity.account.username}
+                  <span>{description.title}</span>
+                </div>
+                <div className="leaderboard-activity__detail">{description.detail}</div>
+              </div>
+              <div className="leaderboard-activity__time">{formatRelativeTime(activity.createdAt)}</div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+const EMPTY_SNAPSHOT = {
+  groupInfo: null,
+  hiscores: { overall: [], ehb: [], ehp: [] },
+  gainers: { weekXP: [], weekEHB: [], monthXP: [], monthEHB: [] },
+  achievements: [],
+  records: [],
+  clanActivities: [],
+  spotlights: [],
+  summary: { totalWeeklyXp: 0, biggestDrop: null, questLeader: null },
+  errors: { wom: false, runeProfile: false },
+};
+
+function buildInsightRows(spotlights, sortBy, valueLabel, metaLabel) {
+  return [...spotlights]
+    .sort((left, right) => right[sortBy] - left[sortBy])
+    .slice(0, 5)
+    .map((entry, index) => ({
+      rank: index + 1,
+      name: entry.name,
+      value: valueLabel(entry),
+      meta: metaLabel(entry),
+    }));
+}
+
+export default function Leaderboards() {
+  const [snapshot, setSnapshot] = useState(EMPTY_SNAPSHOT);
+  const [loading, setLoading] = useState(true);
+  const [hiscoresTab, setHiscoresTab] = useState("overall");
   const [gainersPeriod, setGainersPeriod] = useState("week");
   const [gainersMetric, setGainersMetric] = useState("overall");
 
-  // ── Achievements ─────────────────────────────────────
-  const [achievements, setAchievements] = useState([]);
-  const [achLoading, setAchLoading] = useState(true);
-
-  // ── Records ──────────────────────────────────────────
-  const [records, setRecords] = useState([]);
-  const [recordsLoading, setRecordsLoading] = useState(true);
-
-  // ── Fun Stats ─────────────────────────────────────────
-  const [groupInfo, setGroupInfo] = useState(null);
-
   useEffect(() => {
-    // Group info
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}`)
-      .then((r) => r.json())
-      .then(setGroupInfo)
-      .catch(() => {});
+    let active = true;
 
-    // Hiscores
-    Promise.allSettled([
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=15`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=15`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=ehp&limit=15`).then((r) => r.json()),
-    ]).then(([overall, ehb, ehp]) => {
-      setHiscores({
-        overall: overall.status === "fulfilled"
-          ? overall.value.map((e, i) => ({ rank: i + 1, name: e.player.displayName, value: (e.data.level ?? 0).toLocaleString() }))
-          : [],
-        ehb: ehb.status === "fulfilled"
-          ? ehb.value.map((e, i) => ({ rank: i + 1, name: e.player.displayName, value: `${Math.round(e.data.value ?? 0).toLocaleString()} EHB` }))
-          : [],
-        ehp: ehp.status === "fulfilled"
-          ? ehp.value.map((e, i) => ({ rank: i + 1, name: e.player.displayName, value: `${Math.round(e.data.value ?? 0).toLocaleString()} EHP` }))
-          : [],
-      });
-      setHiscoresLoading(false);
-    });
-
-    // Gainers
-    Promise.allSettled([
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=week&metric=overall&limit=10`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=week&metric=ehb&limit=10`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=month&metric=overall&limit=10`).then((r) => r.json()),
-      fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/gains?period=month&metric=ehb&limit=10`).then((r) => r.json()),
-    ]).then(([wXP, wEHB, mXP, mEHB]) => {
-      const toRows = (result) =>
-        result.status === "fulfilled"
-          ? result.value.map((e, i) => ({
-              rank: i + 1,
-              name: e.player.displayName,
-              rawGained: e.data.gained ?? 0,
-              value: formatValue(e.data.gained),
-              change: formatValue(e.data.gained),
-            }))
-          : [];
-      setGainers({
-        weekXP: toRows(wXP),
-        weekEHB: toRows(wEHB),
-        monthXP: toRows(mXP),
-        monthEHB: toRows(mEHB),
-      });
-      setGainersLoading(false);
-    });
-
-    // Achievements
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/achievements?limit=20`)
-      .then((r) => r.json())
+    fetchLeaderboardSnapshot()
       .then((data) => {
-        setAchievements(Array.isArray(data) ? data : []);
-        setAchLoading(false);
+        if (active) {
+          setSnapshot(data);
+        }
       })
-      .catch(() => setAchLoading(false));
+      .catch(() => {
+        if (active) {
+          setSnapshot((current) => ({
+            ...current,
+            errors: { wom: true, runeProfile: true },
+          }));
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
 
-    // Records
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/records?period=week&limit=10`)
-      .then((r) => r.json())
-      .then((data) => {
-        setRecords(Array.isArray(data) ? data : []);
-        setRecordsLoading(false);
-      })
-      .catch(() => setRecordsLoading(false));
+    return () => {
+      active = false;
+    };
   }, []);
 
-  // Derive fun stats using raw numeric values stored alongside the formatted strings
-  const totalWeeklyXP = gainers.weekXP.reduce((sum, r) => sum + (r.rawGained ?? 0), 0);
+  const activeGainersKey =
+    gainersPeriod === "week"
+      ? gainersMetric === "overall"
+        ? "weekXP"
+        : "weekEHB"
+      : gainersMetric === "overall"
+        ? "monthXP"
+        : "monthEHB";
 
-  const achCount = achievements.length;
-  const recordCount = records.length;
+  const questRaceRows = useMemo(
+    () =>
+      buildInsightRows(
+        snapshot.spotlights,
+        "questPoints",
+        (entry) => `${entry.questPoints} QP`,
+        (entry) => `${entry.questCompleted}/${entry.questTotal} quests complete`,
+      ),
+    [snapshot.spotlights],
+  );
 
-  const activeGainersKey = gainersPeriod === "week"
-    ? (gainersMetric === "overall" ? "weekXP" : "weekEHB")
-    : (gainersMetric === "overall" ? "monthXP" : "monthEHB");
+  const collectionLogRows = useMemo(
+    () =>
+      buildInsightRows(
+        snapshot.spotlights,
+        "clogRate",
+        (entry) => formatPercentage(entry.clogRate),
+        (entry) => `${entry.clogObtained}/${entry.clogTotal} slots logged`,
+      ),
+    [snapshot.spotlights],
+  );
 
-  const hiscoreRows = hiscores[hiscoresTab] ?? [];
+  const diaryRows = useMemo(
+    () =>
+      buildInsightRows(
+        snapshot.spotlights,
+        "diaryRate",
+        (entry) => formatPercentage(entry.diaryRate),
+        (entry) => `${entry.diaryCompleted}/${entry.diaryTotal} diary tasks`,
+      ),
+    [snapshot.spotlights],
+  );
+
+  const combatRows = useMemo(
+    () =>
+      buildInsightRows(
+        snapshot.spotlights,
+        "combatRate",
+        (entry) => formatPercentage(entry.combatRate),
+        (entry) => `${entry.combatCompleted}/${entry.combatTotal} CA tasks`,
+      ),
+    [snapshot.spotlights],
+  );
+
+  const hiscoreRows = snapshot.hiscores[hiscoresTab] ?? [];
+  const gainersRows = snapshot.gainers[activeGainersKey] ?? [];
 
   return (
     <div className="leaderboards-page">
-      {/* ── Hero ── */}
       <section className="hero-section hero-section--compact">
         <div className="hero-grid" aria-hidden="true" />
         <div className="container hero-content">
           <SectionBadge tone="gold">Hall of Fame</SectionBadge>
-          <h1 className="hero-title">Clan <span>Leaderboards</span></h1>
+          <h1 className="hero-title">
+            Clan <span>Leaderboards</span>
+          </h1>
           <p className="hero-subtitle">
-            Live stats pulled straight from Wise Old Man. Updated every time a player syncs.
+            Wise Old Man keeps the ladder fresh, and RuneProfile adds the deeper account facts,
+            progress races, and clan moments worth checking back for.
           </p>
         </div>
       </section>
 
-      {/* ── Fun Stats Strip ── */}
       <section className="page-section" style={{ paddingBottom: "0" }}>
         <div className="container">
           <div className="fun-stats-strip">
             <div className="fun-stat-card">
               <div className="fun-stat-card__value">
-                {groupInfo ? groupInfo.memberCount : "—"}
+                {snapshot.groupInfo ? snapshot.groupInfo.memberCount : "—"}
               </div>
-              <div className="fun-stat-card__label">Active Members</div>
+              <div className="fun-stat-card__label">Active WOM Members</div>
             </div>
             <div className="fun-stat-card">
               <div className="fun-stat-card__value">
-                {gainersLoading ? "—" : formatValue(totalWeeklyXP)}
+                {loading ? "—" : formatCompactNumber(snapshot.summary.totalWeeklyXp, " xp")}
               </div>
               <div className="fun-stat-card__label">Total XP This Week</div>
             </div>
             <div className="fun-stat-card">
               <div className="fun-stat-card__value">
-                {achLoading ? "—" : achCount}
+                {snapshot.summary.biggestDrop
+                  ? formatCompactNumber(snapshot.summary.biggestDrop.data.value, " gp")
+                  : "—"}
               </div>
-              <div className="fun-stat-card__label">Recent Milestones</div>
+              <div className="fun-stat-card__label">Biggest Tracked Drop</div>
+              <div className="fun-stat-card__meta">
+                {snapshot.summary.biggestDrop
+                  ? `${snapshot.summary.biggestDrop.account.username} · ${describeClanActivity(snapshot.summary.biggestDrop).title}`
+                  : "Waiting on fresh RuneProfile highlights"}
+              </div>
             </div>
             <div className="fun-stat-card">
               <div className="fun-stat-card__value">
-                {recordsLoading ? "—" : recordCount}
+                {snapshot.summary.questLeader ? `${snapshot.summary.questLeader.questPoints} QP` : "—"}
               </div>
-              <div className="fun-stat-card__label">Records This Week</div>
+              <div className="fun-stat-card__label">Quest Cape Pace Setter</div>
+              <div className="fun-stat-card__meta">
+                {snapshot.summary.questLeader
+                  ? `${snapshot.summary.questLeader.name} · ${snapshot.summary.questLeader.questCompleted}/${snapshot.summary.questLeader.questTotal} quests`
+                  : "No RuneProfile spotlight data yet"}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Top Clan Members ── */}
       <section className="page-section">
         <div className="container narrow">
           <div className="section-header">
             <SectionBadge tone="sky">Rankings</SectionBadge>
             <h2 className="section-title">Top Clan Members</h2>
-            <p className="section-subtitle">Overall level, bossing efficiency, and skilling dedication.</p>
+            <p className="section-subtitle">
+              The live competitive ladder from Wise Old Man: total level, bossing hours, and skilling efficiency.
+            </p>
           </div>
 
           <TabPanel
@@ -236,154 +325,203 @@ export default function Leaderboards() {
               { key: "ehp", label: "🎒 Skill EHP" },
             ]}
             activeTab={hiscoresTab}
-            setActiveTab={setHiscoresTab}
-          >
-            <div className="leaderboard-card">
-              <LeaderboardTable
-                rows={hiscoreRows}
-                loading={hiscoresLoading}
-                emptyMsg="No hiscore data yet."
-                valueLabel={hiscoresTab === "ehb" ? "EHB" : hiscoresTab === "ehp" ? "EHP" : "Level"}
-              />
-            </div>
-          </TabPanel>
-        </div>
-      </section>
+            onChange={setHiscoresTab}
+          />
 
-      {/* ── Gainers ── */}
-      <section className="page-section page-section--gradient">
-        <div className="container narrow">
-          <div className="section-header">
-            <SectionBadge tone="teal">Gains</SectionBadge>
-            <h2 className="section-title">Top Gainers</h2>
-            <p className="section-subtitle">The hardest workers in the clan — this week and this month.</p>
-          </div>
-
-          <div className="lboard-period-tabs">
-            <div className="tab-switcher" style={{ marginBottom: "0.75rem" }}>
-              <button
-                type="button"
-                className={gainersPeriod === "week" ? "tab-button tab-button--active" : "tab-button"}
-                onClick={() => setGainersPeriod("week")}
-              >
-                📅 This Week
-              </button>
-              <button
-                type="button"
-                className={gainersPeriod === "month" ? "tab-button tab-button--active" : "tab-button"}
-                onClick={() => setGainersPeriod("month")}
-              >
-                📆 This Month
-              </button>
-            </div>
-            <div className="tab-switcher">
-              <button
-                type="button"
-                className={gainersMetric === "overall" ? "tab-button tab-button--active" : "tab-button"}
-                onClick={() => setGainersMetric("overall")}
-              >
-                🎒 XP Gained
-              </button>
-              <button
-                type="button"
-                className={gainersMetric === "ehb" ? "tab-button tab-button--active" : "tab-button"}
-                onClick={() => setGainersMetric("ehb")}
-              >
-                🐉 Boss Kills
-              </button>
-            </div>
-          </div>
-
-          <div className="leaderboard-card" style={{ marginTop: "1.5rem" }}>
+          <div className="leaderboard-card">
             <LeaderboardTable
-              rows={gainers[activeGainersKey]}
-              loading={gainersLoading}
-              emptyMsg="No gainers recorded yet for this period."
-              valueLabel={gainersMetric === "ehb" ? "EHB" : "XP"}
+              rows={hiscoreRows}
+              loading={loading}
+              emptyMsg={snapshot.errors.wom ? "Could not reach Wise Old Man right now." : "No hiscore data yet."}
+              fallbackIcon={hiscoresTab === "ehb" ? "🐉" : hiscoresTab === "ehp" ? "🎒" : "⚔️"}
             />
           </div>
         </div>
       </section>
 
-      {/* ── Recent Milestones + Clan Records ── */}
+      <section className="page-section page-section--gradient">
+        <div className="container narrow">
+          <div className="section-header">
+            <SectionBadge tone="teal">Gains</SectionBadge>
+            <h2 className="section-title">Top Gainers</h2>
+            <p className="section-subtitle">
+              The weekly and monthly grinders. Flip between raw XP growth and bossing-hours progress.
+            </p>
+          </div>
+
+          <div className="lboard-period-tabs">
+            <TabPanel
+              tabs={[
+                { key: "week", label: "📅 This Week" },
+                { key: "month", label: "📆 This Month" },
+              ]}
+              activeTab={gainersPeriod}
+              onChange={setGainersPeriod}
+            />
+            <TabPanel
+              tabs={[
+                { key: "overall", label: "🎒 XP Gained" },
+                { key: "ehb", label: "🐉 Boss EHB" },
+              ]}
+              activeTab={gainersMetric}
+              onChange={setGainersMetric}
+            />
+          </div>
+
+          <div className="leaderboard-card">
+            <LeaderboardTable
+              rows={gainersRows}
+              loading={loading}
+              emptyMsg={snapshot.errors.wom ? "Could not reach Wise Old Man right now." : "No gainers recorded yet for this period."}
+              fallbackIcon={gainersMetric === "ehb" ? "🐉" : "🎒"}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="page-section">
+        <div className="container">
+          <div className="section-header">
+            <SectionBadge tone="purple">RuneProfile</SectionBadge>
+            <h2 className="section-title">Progress Spotlights</h2>
+            <p className="section-subtitle">
+              Deeper account facts for the same names leading the clan — the sort of progress that usually gets buried in chat.
+            </p>
+          </div>
+
+          <div className="leaderboards-insights-grid">
+            <InsightBoard
+              title="Quest Cape Race"
+              icon="📜"
+              rows={questRaceRows}
+              loading={loading}
+              emptyMessage={snapshot.errors.runeProfile ? "RuneProfile is unavailable right now." : "Waiting for RuneProfile account snapshots."}
+              accent="var(--gold)"
+            />
+            <InsightBoard
+              title="Collection Log Hunters"
+              icon="📦"
+              rows={collectionLogRows}
+              loading={loading}
+              emptyMessage={snapshot.errors.runeProfile ? "RuneProfile is unavailable right now." : "No collection log spotlights yet."}
+              accent="var(--sky)"
+            />
+            <InsightBoard
+              title="Diary Grinders"
+              icon="🗺️"
+              rows={diaryRows}
+              loading={loading}
+              emptyMessage={snapshot.errors.runeProfile ? "RuneProfile is unavailable right now." : "No diary progress spotlights yet."}
+              accent="var(--teal)"
+            />
+            <InsightBoard
+              title="Combat Taskers"
+              icon="⚔️"
+              rows={combatRows}
+              loading={loading}
+              emptyMessage={snapshot.errors.runeProfile ? "RuneProfile is unavailable right now." : "No combat achievement spotlights yet."}
+              accent="var(--purple)"
+            />
+          </div>
+        </div>
+      </section>
+
       <section className="page-section">
         <div className="container">
           <div className="section-header">
             <SectionBadge tone="gold">Activity</SectionBadge>
             <h2 className="section-title">Clan Activity</h2>
-            <p className="section-subtitle">Recent achievements, 99s, and personal records set by Clickerz.</p>
+            <p className="section-subtitle">
+              Wise Old Man tracks the leaderboard milestones, while RuneProfile surfaces the richer clan moments worth revisiting.
+            </p>
           </div>
 
           <div className="lboard-two-col">
-            {/* Achievements */}
             <div className="leaderboard-card">
-              <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)" }}>
-                <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: "11px", color: "var(--gold)" }}>
-                  🏆 Recent Milestones
+              <div className="leaderboard-card__header">
+                <h3 className="leaderboard-card__title" style={{ color: "var(--gold)" }}>
+                  <span>🏆</span>
+                  Recent WOM Milestones
                 </h3>
               </div>
-              {achLoading ? (
+              {loading ? (
                 <div className="leaderboard-loading">Loading achievements…</div>
-              ) : achievements.length === 0 ? (
+              ) : snapshot.achievements.length === 0 ? (
                 <div className="leaderboard-loading">No recent achievements found.</div>
               ) : (
-                achievements.map((ach, i) => (
-                  <div key={i} className="leaderboard-row" style={{ gridTemplateColumns: "36px 1fr auto" }}>
-                    <div className="leaderboard-icon">🏆</div>
-                    <div className="leaderboard-name" style={{ fontSize: "14px" }}>
-                      {ach.player.displayName}
-                      <div style={{ fontSize: "11px", color: "var(--text-soft)", fontWeight: 400, marginTop: "2px" }}>
-                        {ach.name}
+                snapshot.achievements.map((achievement, index) => (
+                  <div key={`${achievement.player.displayName}-${achievement.createdAt}-${index}`} className="leaderboard-activity">
+                    <div className="leaderboard-activity__icon">🏆</div>
+                    <div className="leaderboard-activity__content">
+                      <div className="leaderboard-activity__title">
+                        {achievement.player.displayName}
+                        <span>{achievement.name}</span>
                       </div>
+                      <div className="leaderboard-activity__detail">Wise Old Man milestone</div>
                     </div>
-                    <div style={{ fontSize: "10px", color: "var(--text-muted)", textAlign: "right", whiteSpace: "nowrap" }}>
-                      {new Date(ach.createdAt).toLocaleDateString()}
-                    </div>
+                    <div className="leaderboard-activity__time">{formatRelativeTime(achievement.createdAt)}</div>
                   </div>
                 ))
               )}
             </div>
 
-            {/* Records */}
             <div className="leaderboard-card">
-              <div style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)" }}>
-                <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: "11px", color: "var(--sky)" }}>
-                  📈 Weekly Records
+              <div className="leaderboard-card__header">
+                <h3 className="leaderboard-card__title" style={{ color: "var(--sky)" }}>
+                  <span>📈</span>
+                  Weekly Records
                 </h3>
               </div>
-              {recordsLoading ? (
+              {loading ? (
                 <div className="leaderboard-loading">Loading records…</div>
-              ) : records.length === 0 ? (
+              ) : snapshot.records.length === 0 ? (
                 <div className="leaderboard-loading">No records set this week.</div>
               ) : (
-                records.map((rec, i) => (
-                  <div key={i} className="leaderboard-row" style={{ gridTemplateColumns: "40px 36px 1fr auto" }}>
-                    <div className="leaderboard-rank">{i + 1}</div>
-                    <div className="leaderboard-icon">📈</div>
-                    <div className="leaderboard-name" style={{ fontSize: "14px" }}>
-                      {rec.player.displayName}
-                      <div style={{ fontSize: "11px", color: "var(--text-soft)", fontWeight: 400, marginTop: "2px" }}>
-                        {rec.metric.replace(/_/g, " ")}
+                snapshot.records.map((record, index) => (
+                  <div key={`${record.player.displayName}-${record.metric}-${index}`} className="leaderboard-activity">
+                    <div className="leaderboard-activity__icon">📈</div>
+                    <div className="leaderboard-activity__content">
+                      <div className="leaderboard-activity__title">
+                        {record.player.displayName}
+                        <span>{formatMetricName(record.metric)}</span>
                       </div>
+                      <div className="leaderboard-activity__detail">Weekly record value: {formatCompactNumber(record.value)}</div>
                     </div>
-                    <div className="leaderboard-value">
-                      {formatValue(rec.value)}
-                    </div>
+                    <div className="leaderboard-activity__time">#{index + 1}</div>
                   </div>
                 ))
               )}
             </div>
           </div>
+
+          <ActivityFeed activities={snapshot.clanActivities} loading={loading} />
+
+          <p className="leaderboard-note">
+            {snapshot.errors.wom && snapshot.errors.runeProfile ? (
+              "Both data providers are temporarily unavailable."
+            ) : (
+              <>
+                Powered by{" "}
+                <a href={`https://wiseoldman.net/groups/${WOM_GROUP_ID}`} target="_blank" rel="noreferrer">
+                  Wise Old Man
+                </a>{" "}
+                for the ladder and{" "}
+                <a href={RUNEPROFILE_SITE} target="_blank" rel="noreferrer">
+                  RuneProfile
+                </a>{" "}
+                for account progress snapshots.
+              </>
+            )}
+          </p>
         </div>
       </section>
 
-      {/* ── CTA ── */}
       <section className="page-section page-section--gradient">
         <div className="container narrow center-text">
           <SectionBadge tone="purple">Compete</SectionBadge>
           <h2 className="section-title">Want to climb the boards?</h2>
           <p className="section-subtitle">
-            Join the clan, verify your RSN on WOM, and start competing in weekly SOTW &amp; BOTW events.
+            Sync on WOM, keep RuneProfile updated, and give the clan something worth checking in on.
           </p>
           <div style={{ marginTop: "2rem", display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
             <a href="https://discord.gg/cju3DSSdju" target="_blank" rel="noreferrer" className="button button--primary">
