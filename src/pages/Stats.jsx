@@ -1,184 +1,186 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import SectionBadge from "../components/SectionBadge";
+import {
+  describeClanActivity,
+  fetchLeaderboardSnapshot,
+  formatCompactNumber,
+  formatRelativeTime,
+} from "../utils/leaderboards";
 
-const WOM_GROUP_ID = 21596;
+const EMPTY_SNAPSHOT = {
+  groupInfo: null,
+  gainers: { weekXP: [] },
+  achievements: [],
+  clanActivities: [],
+  summary: { totalWeeklyXp: 0, biggestDrop: null, questLeader: null },
+};
 
-function SectionBadge({ children, tone = "sky" }) {
-  const tones = {
-    sky:    { color: "#87ceeb", bg: "rgba(135,206,235,0.1)" },
-    gold:   { color: "#ffd700", bg: "rgba(255,215,0,0.1)" },
-    purple: { color: "#7c8aff", bg: "rgba(124,138,255,0.1)" },
-    teal:   { color: "#56c8e8", bg: "rgba(86,200,232,0.1)" },
-  };
-
+function PulseCard({ title, icon, children, loading, emptyMessage, accent = "var(--sky)" }) {
   return (
-    <span
-      className="section-badge"
-      style={{ color: tones[tone].color, background: tones[tone].bg }}
-    >
-      {children}
-    </span>
+    <div className="leaderboard-card">
+      <div className="leaderboard-card__header">
+        <h3 className="leaderboard-card__title" style={{ color: accent }}>
+          <span>{icon}</span>
+          {title}
+        </h3>
+      </div>
+      {loading ? <div className="leaderboard-loading">Loading clan pulse…</div> : children ?? <div className="leaderboard-loading">{emptyMessage}</div>}
+    </div>
   );
 }
 
 export default function Stats() {
-  const [achievements, setAchievements] = useState([]);
-  const [records, setRecords] = useState([]);
-  const [gains, setGains] = useState([]);
+  const [snapshot, setSnapshot] = useState(EMPTY_SNAPSHOT);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [achRes, recRes, gainRes] = await Promise.all([
-          fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/achievements?limit=10`),
-          fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/records?limit=10&period=week`),
-          fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/gains?limit=10&period=week&metric=overall`)
-        ]);
+    let active = true;
 
-        const achData = await achRes.json();
-        const recData = await recRes.json();
-        const gainData = await gainRes.json();
+    fetchLeaderboardSnapshot()
+      .then((data) => {
+        if (active) {
+          setSnapshot(data);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
 
-        setAchievements(achData);
-        setRecords(recData);
-        setGains(gainData);
-      } catch (error) {
-        console.error("Error fetching WOM stats:", error);
-      } finally {
-        setLoading(false);
-      }
+    return () => {
+      active = false;
     };
-
-    fetchData();
   }, []);
 
-  const formatValue = (val) => {
-    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
-    if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
-    return val;
-  };
+  const questRaceRows = useMemo(
+    () =>
+      [...(snapshot.spotlights ?? [])]
+        .sort((left, right) => right.questPoints - left.questPoints)
+        .slice(0, 5),
+    [snapshot.spotlights],
+  );
 
   return (
     <div className="stats-page">
       <section className="hero-section hero-section--compact">
         <div className="hero-grid" aria-hidden="true" />
         <div className="container hero-content">
-          <SectionBadge tone="gold">Clan Hall of Fame</SectionBadge>
-          <h1 className="hero-title">Clan <span>Stats</span></h1>
+          <SectionBadge tone="gold">Clan Pulse</SectionBadge>
+          <h1 className="hero-title">
+            Fresh <span>Stats</span>
+          </h1>
           <p className="hero-subtitle">
-            Tracking the massive gains and achievements of the Clickerz family.
+            A quicker read on the clan: current XP push, juicy RuneProfile moments, and the quest cape chase.
           </p>
+        </div>
+      </section>
+
+      <section className="page-section" style={{ paddingBottom: "0" }}>
+        <div className="container">
+          <div className="fun-stats-strip">
+            <div className="fun-stat-card">
+              <div className="fun-stat-card__value">{snapshot.groupInfo ? snapshot.groupInfo.memberCount : "—"}</div>
+              <div className="fun-stat-card__label">Tracked Members</div>
+            </div>
+            <div className="fun-stat-card">
+              <div className="fun-stat-card__value">{loading ? "—" : formatCompactNumber(snapshot.summary.totalWeeklyXp, " xp")}</div>
+              <div className="fun-stat-card__label">Weekly XP Push</div>
+            </div>
+            <div className="fun-stat-card">
+              <div className="fun-stat-card__value">
+                {snapshot.summary.biggestDrop ? formatCompactNumber(snapshot.summary.biggestDrop.data.value, " gp") : "—"}
+              </div>
+              <div className="fun-stat-card__label">Best Recent Drop</div>
+            </div>
+            <div className="fun-stat-card">
+              <div className="fun-stat-card__value">
+                {snapshot.summary.questLeader ? `${snapshot.summary.questLeader.questPoints} QP` : "—"}
+              </div>
+              <div className="fun-stat-card__label">Quest Cape Leader</div>
+            </div>
+          </div>
         </div>
       </section>
 
       <section className="page-section">
         <div className="container">
-          <div className="values-grid">
-            {/* Recent Achievements / Drops */}
-            <div className="leaderboard-card" style={{ gridColumn: 'span 1' }}>
-              <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: '12px', color: 'var(--gold)' }}>
-                  Recent Achievements
-                </h3>
-              </div>
-              {loading ? (
-                <div className="leaderboard-loading">Loading achievements...</div>
-              ) : achievements.length > 0 ? (
-                achievements.map((ach, i) => (
-                  <div key={i} className="leaderboard-row">
-                    <div className="leaderboard-icon">🏆</div>
-                    <div className="leaderboard-name" style={{ fontSize: '14px' }}>
-                      {ach.player.displayName}
-                      <div style={{ fontSize: '11px', color: 'var(--text-soft)', fontWeight: 400 }}>
-                        {ach.name}
+          <div className="lboard-two-col">
+            <PulseCard title="Weekly XP Leaders" icon="🎒" loading={loading} accent="var(--teal)">
+              {snapshot.gainers.weekXP.length > 0
+                ? snapshot.gainers.weekXP.slice(0, 5).map((row, index) => (
+                    <div key={`${row.name}-${index}`} className={index === 0 ? "leaderboard-insight leaderboard-insight--first" : "leaderboard-insight"}>
+                      <div className="leaderboard-insight__rank">{row.rank}</div>
+                      <div className="leaderboard-insight__content">
+                        <div className="leaderboard-insight__name">{row.name}</div>
+                        <div className="leaderboard-insight__meta">Weekly XP gained</div>
                       </div>
+                      <div className="leaderboard-insight__value">{row.value}</div>
                     </div>
-                    <div className="leaderboard-value" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {new Date(ach.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="leaderboard-loading">No recent achievements found.</div>
-              )}
-            </div>
+                  ))
+                : null}
+            </PulseCard>
 
-            {/* Weekly Records */}
-            <div className="leaderboard-card" style={{ gridColumn: 'span 1' }}>
-              <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-                <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: '12px', color: 'var(--sky)' }}>
-                  Weekly Records
-                </h3>
-              </div>
-              {loading ? (
-                <div className="leaderboard-loading">Loading records...</div>
-              ) : records.length > 0 ? (
-                records.map((rec, i) => (
-                  <div key={i} className="leaderboard-row">
-                    <div className="leaderboard-rank">{i + 1}</div>
-                    <div className="leaderboard-name" style={{ fontSize: '14px' }}>
-                      {rec.player.displayName}
-                      <div style={{ fontSize: '11px', color: 'var(--text-soft)', fontWeight: 400 }}>
-                        {rec.metric.replace(/_/g, ' ')}
+            <PulseCard title="RuneProfile Highlights" icon="🛰️" loading={loading} accent="var(--purple)">
+              {snapshot.clanActivities.length > 0
+                ? snapshot.clanActivities.slice(0, 6).map((activity, index) => {
+                    const description = describeClanActivity(activity);
+
+                    return (
+                      <div key={`${activity.account.username}-${activity.createdAt}-${index}`} className={index === 0 ? "leaderboard-activity leaderboard-activity--first" : "leaderboard-activity"}>
+                        <div className="leaderboard-activity__icon">{description.icon}</div>
+                        <div className="leaderboard-activity__content">
+                          <div className="leaderboard-activity__title">
+                            {activity.account.username}
+                            <span>{description.title}</span>
+                          </div>
+                          <div className="leaderboard-activity__detail">{description.detail}</div>
+                        </div>
+                        <div className="leaderboard-activity__time">{formatRelativeTime(activity.createdAt)}</div>
                       </div>
-                    </div>
-                    <div className="leaderboard-value">
-                      {formatValue(rec.value)}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="leaderboard-loading">No records this week.</div>
-              )}
-            </div>
-          </div>
-
-          <div className="leaderboard-card" style={{ marginTop: '2rem' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-              <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: '12px', color: 'var(--teal)' }}>
-                Top Gainers (Overall XP - Weekly)
-              </h3>
-            </div>
-            {loading ? (
-              <div className="leaderboard-loading">Loading gains...</div>
-            ) : gains.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-                {gains.map((gain, i) => (
-                  <div key={i} className="leaderboard-row" style={{ borderRight: i % 2 === 0 ? '1px solid var(--border)' : 'none' }}>
-                    <div className="leaderboard-rank">{i + 1}</div>
-                    <div className="leaderboard-name">
-                      {gain.player.displayName}
-                    </div>
-                    <div className="leaderboard-change">
-                      ▲ {formatValue(gain.data.gained)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="leaderboard-loading">No gains recorded this week.</div>
-            )}
+                    );
+                  })
+                : null}
+            </PulseCard>
           </div>
         </div>
       </section>
 
       <section className="page-section page-section--gradient">
-        <div className="container narrow center-text">
-          <SectionBadge tone="purple">Fun Stats</SectionBadge>
-          <h2 className="section-title">Did You Know?</h2>
-          <div className="hero-stats" style={{ marginTop: '2rem' }}>
-            <div className="stat-card">
-              <div className="stat-card__value">∞</div>
-              <div className="stat-card__label">Clicks Logged</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card__value">100%</div>
-              <div className="stat-card__label">Effort Provided</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-card__value">0</div>
-              <div className="stat-card__label">Exp Waste Allowed</div>
-            </div>
+        <div className="container">
+          <div className="lboard-two-col">
+            <PulseCard title="Recent WOM Milestones" icon="🏆" loading={loading} accent="var(--gold)">
+              {snapshot.achievements.length > 0
+                ? snapshot.achievements.slice(0, 6).map((achievement, index) => (
+                    <div key={`${achievement.player.displayName}-${achievement.createdAt}-${index}`} className={index === 0 ? "leaderboard-activity leaderboard-activity--first" : "leaderboard-activity"}>
+                      <div className="leaderboard-activity__icon">🏆</div>
+                      <div className="leaderboard-activity__content">
+                        <div className="leaderboard-activity__title">
+                          {achievement.player.displayName}
+                          <span>{achievement.name}</span>
+                        </div>
+                        <div className="leaderboard-activity__detail">Wise Old Man milestone</div>
+                      </div>
+                      <div className="leaderboard-activity__time">{formatRelativeTime(achievement.createdAt)}</div>
+                    </div>
+                  ))
+                : null}
+            </PulseCard>
+
+            <PulseCard title="Quest Cape Race" icon="📜" loading={loading} accent="var(--sky)">
+              {questRaceRows.length > 0
+                ? questRaceRows.map((entry, index) => (
+                    <div key={`${entry.name}-${index}`} className={index === 0 ? "leaderboard-insight leaderboard-insight--first" : "leaderboard-insight"}>
+                      <div className="leaderboard-insight__rank">{index + 1}</div>
+                      <div className="leaderboard-insight__content">
+                        <div className="leaderboard-insight__name">{entry.name}</div>
+                        <div className="leaderboard-insight__meta">{entry.questCompleted}/{entry.questTotal} quests complete</div>
+                      </div>
+                      <div className="leaderboard-insight__value">{entry.questPoints} QP</div>
+                    </div>
+                  ))
+                : null}
+            </PulseCard>
           </div>
         </div>
       </section>
