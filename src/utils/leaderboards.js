@@ -18,7 +18,8 @@ async function fetchJson(url) {
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const statusText = response.statusText || "Unknown status";
+    throw new Error(`Request failed for ${url}: ${response.status} ${statusText}`);
   }
 
   return response.json();
@@ -152,15 +153,7 @@ export function describeClanActivity(activity) {
   }
 }
 
-function toHiscoreRows(entries, formatter) {
-  if (!Array.isArray(entries)) {
-    return [];
-  }
-
-  return entries.map((entry, index) => formatter(entry, index));
-}
-
-function toGainRows(entries, formatter) {
+function toRows(entries, formatter) {
   if (!Array.isArray(entries)) {
     return [];
   }
@@ -267,7 +260,7 @@ export async function fetchLeaderboardSnapshot() {
   ] = womRequests;
 
   const hiscores = {
-    overall: toHiscoreRows(
+    overall: toRows(
       overallResult.status === "fulfilled" ? overallResult.value : [],
       (entry, index) => ({
         rank: index + 1,
@@ -275,7 +268,7 @@ export async function fetchLeaderboardSnapshot() {
         value: `${(entry.data.level ?? 0).toLocaleString()} lvl`,
       }),
     ),
-    ehb: toHiscoreRows(
+    ehb: toRows(
       ehbResult.status === "fulfilled" ? ehbResult.value : [],
       (entry, index) => ({
         rank: index + 1,
@@ -283,7 +276,7 @@ export async function fetchLeaderboardSnapshot() {
         value: `${Math.round(entry.data.value ?? 0).toLocaleString()} EHB`,
       }),
     ),
-    ehp: toHiscoreRows(
+    ehp: toRows(
       ehpResult.status === "fulfilled" ? ehpResult.value : [],
       (entry, index) => ({
         rank: index + 1,
@@ -294,7 +287,7 @@ export async function fetchLeaderboardSnapshot() {
   };
 
   const mapGainers = (result, metric) =>
-    toGainRows(result.status === "fulfilled" ? result.value : [], (entry, index) => ({
+    toRows(result.status === "fulfilled" ? result.value : [], (entry, index) => ({
       rank: index + 1,
       name: entry.player.displayName,
       rawGained: Number(entry.data.gained ?? 0),

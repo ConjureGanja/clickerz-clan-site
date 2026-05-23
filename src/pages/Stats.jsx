@@ -15,7 +15,7 @@ const EMPTY_SNAPSHOT = {
   summary: { totalWeeklyXp: 0, biggestDrop: null, questLeader: null },
 };
 
-function PulseCard({ title, icon, children, loading, emptyMessage, accent = "var(--sky)" }) {
+function PulseCard({ title, icon, children, loading, emptyMessage = "No data yet", accent = "var(--sky)" }) {
   return (
     <div className="leaderboard-card">
       <div className="leaderboard-card__header">
