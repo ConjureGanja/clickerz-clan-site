@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { id: "/", label: "Home", exact: true },
   { id: "/events", label: "Events" },
   { id: "/leaderboards", label: "Leaderboards" },
+  { id: "/clicking-game", label: "Clicking Game" },
   { id: "/guides", label: "Guides" },
   { id: "/stats", label: "Clan Stats" },
   { id: "/#join", label: "Join Us" },

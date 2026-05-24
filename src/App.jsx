@@ -8,6 +8,8 @@ import Guides from "./pages/Guides";
 import GuidePost from "./pages/GuidePost";
 import Stats from "./pages/Stats";
 import Leaderboards from "./pages/Leaderboards";
+import ClickingGame from "./pages/ClickingGame";
+import ClickingGameWidget from "./components/ClickingGameWidget";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -33,6 +35,7 @@ export default function App() {
       <div className="app-shell">
         <ScrollToTop />
         <NavBar />
+        <ClickingGameWidget />
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -41,6 +44,7 @@ export default function App() {
             <Route path="/guides/:slug" element={<GuidePost />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/clicking-game" element={<ClickingGame />} />
           </Routes>
         </main>
         <Footer />
