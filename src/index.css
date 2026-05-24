@@ -1366,6 +1366,13 @@ code {
   font-weight: 700;
 }
 
+.fun-stat-card__meta {
+  margin-top: 0.6rem;
+  color: var(--text-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .lboard-period-tabs {
   display: flex;
   flex-direction: column;
@@ -1377,6 +1384,106 @@ code {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
+}
+
+.leaderboards-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.leaderboard-card__header {
+  padding: 1.35rem 1.5rem;
+  border-bottom: 1px solid rgba(135, 206, 235, 0.08);
+}
+
+.leaderboard-card__title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: "Press Start 2P", monospace;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.leaderboard-insight,
+.leaderboard-activity {
+  display: grid;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(135, 206, 235, 0.04);
+}
+
+.leaderboard-insight:last-child,
+.leaderboard-activity:last-child {
+  border-bottom: 0;
+}
+
+.leaderboard-insight--first,
+.leaderboard-activity--first {
+  background: linear-gradient(90deg, rgba(124, 138, 255, 0.08), transparent);
+}
+
+.leaderboard-insight {
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+}
+
+.leaderboard-insight__rank {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(135, 206, 235, 0.06);
+  color: var(--text-muted);
+  font-family: "Press Start 2P", monospace;
+  font-size: 10px;
+}
+
+.leaderboard-insight__name,
+.leaderboard-activity__title {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.leaderboard-insight__meta,
+.leaderboard-activity__detail,
+.leaderboard-activity__title span {
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.leaderboard-activity__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.leaderboard-insight__value {
+  color: var(--gold);
+  font-family: "Press Start 2P", monospace;
+  font-size: 11px;
+  text-align: right;
+}
+
+.leaderboard-activity {
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+}
+
+.leaderboard-activity__icon {
+  font-size: 22px;
+}
+
+.leaderboard-activity__time {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* ── Guide post ──────────────────────────────────── */
@@ -1463,7 +1570,8 @@ code {
 
 @media (max-width: 900px) {
   .winners-grid,
-  .lboard-two-col {
+  .lboard-two-col,
+  .leaderboards-insights-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1475,6 +1583,17 @@ code {
 @media (max-width: 768px) {
   .guide-article {
     padding: 1.5rem;
+  }
+
+  .leaderboard-insight,
+  .leaderboard-activity {
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
+
+  .leaderboard-insight__value,
+  .leaderboard-activity__time {
+    grid-column: 2;
+    text-align: left;
   }
 
   .guide-post-footer {
