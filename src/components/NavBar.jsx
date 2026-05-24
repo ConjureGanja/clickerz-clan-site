@@ -5,6 +5,7 @@ const NAV_LINKS = [
   { id: "/", label: "Home", exact: true },
   { id: "/events", label: "Events" },
   { id: "/leaderboards", label: "Leaderboards" },
+  { id: "/clicking-game", label: "Clicking Game" },
   { id: "/guides", label: "Guides" },
   { id: "/stats", label: "Clan Stats" },
   { id: "/#join", label: "Join Us" },
@@ -42,7 +43,7 @@ export default function NavBar() {
     >
       <div className="container nav-inner">
         <NavLink to="/" className="logo">
-          <img src="/logo.svg" alt="Clickerz Clan Logo" className="nav-logo-img" />
+          <img src="/logo.png" alt="Clickerz Clan Logo" className="nav-logo-img" />
           <span className="nav-logo-text">CLICKERZ<span>.CC</span></span>
         </NavLink>
 

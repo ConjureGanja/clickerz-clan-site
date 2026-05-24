@@ -125,12 +125,12 @@ code {
 }
 
 .nav-logo-img {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(135, 206, 235, 0.25);
+  width: 52px;
+  height: 52px;
+  border-radius: 0;
+  object-fit: contain;
   flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(135, 206, 235, 0.25));
 }
 
 .nav-logo-text {
@@ -158,7 +158,7 @@ code {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1.35rem;
 }
 
 .nav-link {
@@ -300,10 +300,9 @@ code {
 .hero-logo-img {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid rgba(135, 206, 235, 0.2);
-  box-shadow: 0 0 60px rgba(135, 206, 235, 0.12), 0 0 120px rgba(255, 215, 0, 0.06);
+  border-radius: 0;
+  object-fit: contain;
+  filter: drop-shadow(0 0 40px rgba(135, 206, 235, 0.2)) drop-shadow(0 0 80px rgba(255, 215, 0, 0.08));
 }
 
 .hero-badge {
@@ -863,6 +862,310 @@ code {
   color: var(--text-muted);
 }
 
+/* ── Clickerz Clicking Game ───────────────────────── */
+
+.clicker-widget {
+  position: fixed;
+  right: 1rem;
+  top: 50%;
+  z-index: 900;
+  width: 162px;
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(24, 24, 31, 0.92);
+  border: 1px solid rgba(135, 206, 235, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), 0 0 30px rgba(135, 206, 235, 0.08);
+  backdrop-filter: blur(18px);
+  transform: translateY(-50%);
+}
+
+.clicker-widget__label {
+  color: var(--text-soft);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clicker-widget__score {
+  margin-top: 0.35rem;
+  font-family: "Press Start 2P", monospace;
+  color: var(--gold);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.clicker-widget__link {
+  display: inline-flex;
+  margin-top: 0.65rem;
+  color: var(--sky);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.clicker-widget__link:hover {
+  color: var(--gold);
+}
+
+.clicker-widget__divider {
+  margin: 0.6rem 0;
+  border: 0;
+  border-top: 1px solid rgba(135, 206, 235, 0.12);
+}
+
+.clicker-widget__music-label {
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.clicker-widget__music-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.clicker-widget__btn {
+  border: 1px solid rgba(135, 206, 235, 0.18);
+  background: rgba(135, 206, 235, 0.07);
+  color: var(--sky);
+  border-radius: 7px;
+  padding: 0.25rem 0.4rem;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.clicker-widget__btn:hover {
+  background: rgba(135, 206, 235, 0.18);
+}
+
+.clicker-widget__vol {
+  color: var(--gold);
+  font-size: 9px;
+  font-weight: 900;
+  font-family: "Press Start 2P", monospace;
+  flex: 1;
+  text-align: center;
+  overflow: hidden;
+}
+
+.clicking-game-page {
+  position: relative;
+  overflow: hidden;
+}
+
+.clicking-game-hero {
+  border-bottom: 1px solid rgba(135, 206, 235, 0.08);
+}
+
+.clicking-game-arena {
+  position: relative;
+  min-height: 920px;
+  overflow: hidden;
+}
+
+.clicking-game-layout {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.clicking-score-card,
+.clicking-panel-card {
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(31, 31, 40, 0.96), rgba(24, 24, 31, 0.94));
+  border: 1px solid rgba(135, 206, 235, 0.12);
+  box-shadow: var(--shadow-md);
+}
+
+.clicking-score-card {
+  display: grid;
+  place-items: center;
+  min-height: 430px;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.clicking-score-card__label {
+  color: var(--text-soft);
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.clicking-score-card__score {
+  margin: 1.25rem 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(46px, 9vw, 112px);
+  line-height: 1.2;
+  color: var(--gold);
+  text-shadow: 0 0 34px rgba(255, 215, 0, 0.18);
+  overflow-wrap: anywhere;
+}
+
+.clicking-score-card p,
+.clicking-panel-card p {
+  margin: 0;
+  max-width: 560px;
+  color: var(--text-soft);
+  line-height: 1.7;
+}
+
+.clicking-bonus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px;
+  animation: fadeInDown 0.2s ease-out;
+}
+
+.clicking-bonus--good {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.clicking-bonus--bad {
+  color: #fb7185;
+  background: rgba(251, 113, 133, 0.1);
+}
+
+.clicking-side-panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.clicking-panel-card {
+  padding: 1.5rem;
+}
+
+.clicking-panel-card h2 {
+  margin: 0 0 0.75rem;
+  color: var(--sky);
+  font-family: "Press Start 2P", monospace;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.clicking-music-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.clicking-music-controls .button {
+  min-height: 44px;
+  padding: 0.75rem 0.95rem;
+  font-size: 13px;
+}
+
+.clicking-volume,
+.clicking-submit-message {
+  margin-top: 0.9rem;
+  color: var(--gold);
+  font-weight: 900;
+}
+
+.clicking-name-label {
+  display: block;
+  margin-top: 1rem;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.clicking-name-input {
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(135, 206, 235, 0.18);
+  background: rgba(12, 12, 15, 0.72);
+  color: var(--text);
+  font: inherit;
+  outline: 0;
+}
+
+.clicking-name-input:focus {
+  border-color: rgba(135, 206, 235, 0.5);
+  box-shadow: 0 0 0 4px rgba(135, 206, 235, 0.08);
+}
+
+.clicking-leaderboard-wrap {
+  position: relative;
+  z-index: 2;
+  margin-top: 5rem;
+}
+
+.clicking-leaderboard-card .leaderboard-row {
+  grid-template-columns: 40px 36px 1fr 120px 140px;
+}
+
+.clicking-floater-field {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.clicking-floater {
+  position: absolute;
+  bottom: -6rem;
+  display: inline-grid;
+  place-items: center;
+  min-width: 3.25rem;
+  min-height: 3.25rem;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  background: rgba(24, 24, 31, 0.84);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: clickingFloatUp linear forwards;
+}
+
+.clicking-floater:hover {
+  filter: brightness(1.15);
+}
+
+.clicking-floater span {
+  line-height: 1;
+}
+
+.clicking-floater strong {
+  margin-top: 0.1rem;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.clicking-floater--good {
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.22);
+}
+
+.clicking-floater--bad {
+  color: #fb7185;
+  border: 1px solid rgba(251, 113, 133, 0.22);
+}
+
 /* ── Discord ─────────────────────────────────────── */
 
 .discord-card {
@@ -1122,12 +1425,45 @@ code {
   }
 }
 
+@keyframes clickingFloatUp {
+  0% {
+    transform: translateY(0) rotate(-4deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-115vh) rotate(8deg);
+    opacity: 0;
+  }
+}
+
 /* ── Responsive ──────────────────────────────────── */
 
 @media (max-width: 900px) {
   .values-grid,
   .events-grid {
     grid-template-columns: 1fr;
+  }
+
+  .clicker-widget {
+    right: 0.75rem;
+    top: auto;
+    bottom: 1rem;
+    width: 162px;
+    transform: none;
+  }
+
+  .clicking-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .clicking-leaderboard-card .leaderboard-row {
+    grid-template-columns: 34px 30px 1fr;
   }
 
   .leaderboard-row {
@@ -1185,7 +1521,21 @@ code {
     align-items: stretch;
   }
 
-  .button {
+  .hero-actions .button,
+  .clicking-panel-card > .button {
+    width: 100%;
+  }
+
+  .clicking-score-card {
+    min-height: 360px;
+    padding: 2rem 1rem;
+  }
+
+  .clicking-music-controls {
+    flex-direction: column;
+  }
+
+  .clicking-music-controls .button {
     width: 100%;
   }
 

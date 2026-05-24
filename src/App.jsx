@@ -8,6 +8,9 @@ import Guides from "./pages/Guides";
 import GuidePost from "./pages/GuidePost";
 import Stats from "./pages/Stats";
 import Leaderboards from "./pages/Leaderboards";
+import ClickingGame from "./pages/ClickingGame";
+import ClickingGameWidget from "./components/ClickingGameWidget";
+import { audioManager } from "./utils/audioManager";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -27,12 +30,26 @@ function ScrollToTop() {
   return null;
 }
 
+function ClickingGameAudioAutoplay() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (pathname === "/clicking-game") {
+      audioManager.tryAutoplay();
+    }
+  }, [pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
+      <ClickingGameAudioAutoplay />
       <div className="app-shell">
         <ScrollToTop />
         <NavBar />
+        <ClickingGameWidget />
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -41,6 +58,7 @@ export default function App() {
             <Route path="/guides/:slug" element={<GuidePost />} />
             <Route path="/leaderboards" element={<Leaderboards />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/clicking-game" element={<ClickingGame />} />
           </Routes>
         </main>
         <Footer />
