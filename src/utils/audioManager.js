@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-
-const AUDIO_SRC = "/audio/clickerz-clicking-game.mp3";
+import { CLICKERZ_AUDIO_SRC } from "./clickingGame";
 
 class AudioManager {
   constructor() {
@@ -13,7 +12,7 @@ class AudioManager {
 
   _init() {
     if (this._audio || typeof window === "undefined") return;
-    this._audio = new Audio(AUDIO_SRC);
+    this._audio = new Audio(CLICKERZ_AUDIO_SRC);
     this._audio.loop = true;
     this._audio.volume = this._volume;
     this._audio.addEventListener("play", () => {
