@@ -30,13 +30,22 @@ function ScrollToTop() {
   return null;
 }
 
-export default function App() {
-  useEffect(() => {
-    audioManager.tryAutoplay();
-  }, []);
+function ClickingGameAudioAutoplay() {
+  const { pathname } = useLocation();
 
+  useEffect(() => {
+    if (pathname === "/clicking-game") {
+      audioManager.tryAutoplay();
+    }
+  }, [pathname]);
+
+  return null;
+}
+
+export default function App() {
   return (
     <Router>
+      <ClickingGameAudioAutoplay />
       <div className="app-shell">
         <ScrollToTop />
         <NavBar />
