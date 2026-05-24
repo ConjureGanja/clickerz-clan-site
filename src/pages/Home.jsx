@@ -104,7 +104,7 @@ function HeroSection({ discordOnline, womMemberCount }) {
 
       <div className="container hero-content">
         <div className="hero-logo-wrap">
-          <img src="/logo.svg" alt="Clickerz Clan" className="hero-logo-img" />
+          <img src="/logo.png" alt="Clickerz Clan" className="hero-logo-img" />
         </div>
 
         <div className="hero-badge">
