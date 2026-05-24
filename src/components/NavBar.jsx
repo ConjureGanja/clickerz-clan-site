@@ -43,7 +43,7 @@ export default function NavBar() {
     >
       <div className="container nav-inner">
         <NavLink to="/" className="logo">
-          <img src="/logo.svg" alt="Clickerz Clan Logo" className="nav-logo-img" />
+          <img src="/logo.png" alt="Clickerz Clan Logo" className="nav-logo-img" />
           <span className="nav-logo-text">CLICKERZ<span>.CC</span></span>
         </NavLink>
 

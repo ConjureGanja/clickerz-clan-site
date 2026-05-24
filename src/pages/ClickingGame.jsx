@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SectionBadge from "../components/SectionBadge";
 import {
-  CLICKERZ_AUDIO_SRC,
   formatClickCount,
   readClickLeaderboard,
   saveClickLeaderboardEntry,
   useClickerzScore,
 } from "../utils/clickingGame";
+import { useAudioManager } from "../utils/audioManager";
 
 const FLOATING_EMOJIS = [
   { emoji: "🌿", value: 10 },
@@ -41,15 +41,12 @@ function formatLeaderboardDate(value) {
 
 export default function ClickingGame() {
   const { score, addScore } = useClickerzScore();
+  const audio = useAudioManager();
   const [floaters, setFloaters] = useState(() => Array.from({ length: 7 }, createFloatingEmoji));
   const [leaderboard, setLeaderboard] = useState(readClickLeaderboard);
   const [playerName, setPlayerName] = useState("");
   const [submitMessage, setSubmitMessage] = useState("");
   const [lastBonus, setLastBonus] = useState(null);
-  const [volume, setVolume] = useState(0.35);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [musicMessage, setMusicMessage] = useState("Music will start automatically when your browser allows it.");
-  const audioRef = useRef(null);
 
   const topScore = useMemo(() => leaderboard[0]?.score ?? 0, [leaderboard]);
 
@@ -59,25 +56,6 @@ export default function ClickingGame() {
     }, 1050);
 
     return () => window.clearInterval(intervalId);
-  }, []);
-
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume]);
-
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.play()
-      .then(() => {
-        setIsPlaying(true);
-        setMusicMessage("Looping game music is playing.");
-      })
-      .catch(() => {
-        setIsPlaying(false);
-        setMusicMessage("Press Play to start music if your browser blocks autoplay.");
-      });
   }, []);
 
   const handleFloaterClick = (floater) => {
@@ -98,31 +76,8 @@ export default function ClickingGame() {
     setSubmitMessage("Score added to the Clickerz Clicking Game leaderboard!");
   };
 
-  const handlePlayPause = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    if (audio.paused) {
-      audio.play()
-        .then(() => {
-          setIsPlaying(true);
-          setMusicMessage("Looping game music is playing.");
-        })
-        .catch(() => setMusicMessage("Add the MP3 file, then press Play again."));
-    } else {
-      audio.pause();
-      setIsPlaying(false);
-      setMusicMessage("Music paused.");
-    }
-  };
-
-  const adjustVolume = (change) => {
-    setVolume((current) => Math.min(1, Math.max(0, Number((current + change).toFixed(2)))));
-  };
-
   return (
     <div className="clicking-game-page">
-      <audio ref={audioRef} src={CLICKERZ_AUDIO_SRC} loop preload="auto" />
 
       <section className="hero-section hero-section--compact clicking-game-hero">
         <div className="hero-grid" aria-hidden="true" />
@@ -159,22 +114,23 @@ export default function ClickingGame() {
           <div className="clicking-side-panel">
             <div className="clicking-panel-card">
               <h2>Game Music</h2>
-              <p>{musicMessage}</p>
+              <p>
+                {audio.isPlaying
+                  ? "Looping game music is playing."
+                  : "Press Play to start the game music."}
+              </p>
               <div className="clicking-music-controls">
-                <button type="button" className="button button--primary" onClick={handlePlayPause}>
-                  {isPlaying ? "Pause" : "Play"}
+                <button type="button" className="button button--primary" onClick={() => audio.toggle()}>
+                  {audio.isPlaying ? "⏸ Pause" : "▶ Play"}
                 </button>
-                <button type="button" className="button button--secondary" onClick={() => adjustVolume(-0.1)}>
+                <button type="button" className="button button--secondary" onClick={() => audio.adjustVolume(-0.1)}>
                   Volume −
                 </button>
-                <button type="button" className="button button--secondary" onClick={() => adjustVolume(0.1)}>
+                <button type="button" className="button button--secondary" onClick={() => audio.adjustVolume(0.1)}>
                   Volume +
                 </button>
               </div>
-              <div className="clicking-volume">Volume: {Math.round(volume * 100)}%</div>
-              <p className="leaderboard-note">
-                Upload the looping MP3 to <code>public/audio/clickerz-clicking-game.mp3</code>.
-              </p>
+              <div className="clicking-volume">Volume: {Math.round(audio.volume * 100)}%</div>
             </div>
 
             <form className="clicking-panel-card" onSubmit={handleSubmitScore}>
