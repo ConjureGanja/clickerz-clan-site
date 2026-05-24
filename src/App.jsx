@@ -31,13 +31,9 @@ function ScrollToTop() {
 }
 
 function ClickingGameAudioAutoplay() {
-  const { pathname } = useLocation();
-
   useEffect(() => {
-    if (pathname === "/clicking-game") {
-      audioManager.tryAutoplay();
-    }
-  }, [pathname]);
+    audioManager.tryAutoplay();
+  }, []);
 
   return null;
 }

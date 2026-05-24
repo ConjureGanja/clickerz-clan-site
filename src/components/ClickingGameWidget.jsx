@@ -75,6 +75,7 @@ export default function ClickingGameWidget() {
         <button
           type="button"
           className="clicker-widget__btn"
+          data-audio-toggle
           onClick={() => audio.toggle()}
           aria-label={audio.isPlaying ? "Pause music" : "Play music"}
         >
