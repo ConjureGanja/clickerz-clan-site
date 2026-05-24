@@ -116,7 +116,7 @@ export default function ClickingGame() {
               <h2>Game Music</h2>
               <p>{audio.message}</p>
               <div className="clicking-music-controls">
-                <button type="button" className="button button--primary" onClick={() => audio.toggle()}>
+                <button type="button" className="button button--primary" data-audio-toggle onClick={() => audio.toggle()}>
                   {audio.isPlaying ? "⏸ Pause" : "▶ Play"}
                 </button>
                 <button type="button" className="button button--secondary" onClick={() => audio.adjustVolume(-0.1)}>
