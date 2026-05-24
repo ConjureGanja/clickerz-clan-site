@@ -1096,7 +1096,7 @@ code {
 }
 
 .clicking-floater:hover {
-  transform: scale(1.12);
+  filter: brightness(1.15);
 }
 
 .clicking-floater span {

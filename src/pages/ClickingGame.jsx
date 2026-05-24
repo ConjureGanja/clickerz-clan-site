@@ -69,7 +69,6 @@ export default function ClickingGame() {
     const audio = audioRef.current;
     if (!audio) return;
 
-    audio.volume = volume;
     audio.play()
       .then(() => {
         setIsPlaying(true);
@@ -79,7 +78,7 @@ export default function ClickingGame() {
         setIsPlaying(false);
         setMusicMessage("Press Play to start music if your browser blocks autoplay.");
       });
-  }, [volume]);
+  }, []);
 
   const handleFloaterClick = (floater) => {
     addScore(floater.value);
