@@ -114,11 +114,7 @@ export default function ClickingGame() {
           <div className="clicking-side-panel">
             <div className="clicking-panel-card">
               <h2>Game Music</h2>
-              <p>
-                {audio.isPlaying
-                  ? "Looping game music is playing."
-                  : "Press Play to start the game music."}
-              </p>
+              <p>{audio.message}</p>
               <div className="clicking-music-controls">
                 <button type="button" className="button button--primary" onClick={() => audio.toggle()}>
                   {audio.isPlaying ? "⏸ Pause" : "▶ Play"}
