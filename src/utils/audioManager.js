@@ -1,14 +1,32 @@
 import { useEffect, useState } from "react";
 import { CLICKERZ_AUDIO_SRC } from "./clickingGame";
 
-class AudioManager {
+export const CLICKERZ_AUDIO_ENABLED_KEY = "clickerz-clicking-game-audio-enabled";
+
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function readStoredAudioEnabled() {
+  if (!canUseStorage()) return false;
+  return window.localStorage.getItem(CLICKERZ_AUDIO_ENABLED_KEY) === "true";
+}
+
+function writeStoredAudioEnabled(enabled) {
+  if (!canUseStorage()) return;
+  window.localStorage.setItem(CLICKERZ_AUDIO_ENABLED_KEY, enabled ? "true" : "false");
+}
+
+export class AudioManager {
   constructor() {
     this._audio = null;
     this._volume = 0.35;
     this._playing = false;
-    this._wantsToPlay = false;
-    this._status = "idle";
-    this._message = "Press Play to start the game music.";
+    this._wantsToPlay = readStoredAudioEnabled();
+    this._status = this._wantsToPlay ? "loading" : "idle";
+    this._message = this._wantsToPlay
+      ? "Trying to resume the game music…"
+      : "Press Play to start the game music.";
     this._unlock = null;
     this._listeners = new Set();
   }
@@ -22,6 +40,7 @@ class AudioManager {
     audio.addEventListener("playing", () => {
       this._playing = true;
       this._wantsToPlay = true;
+      writeStoredAudioEnabled(true);
       this._status = "playing";
       this._message = "Looping game music is playing.";
       this._disarmUnlock();
@@ -61,10 +80,12 @@ class AudioManager {
     return this._message;
   }
 
-  play() {
+  play({ persistIntent = true } = {}) {
     this._init();
     if (!this._audio) return Promise.resolve(false);
+    const shouldResumeAfterBlock = persistIntent && readStoredAudioEnabled();
     this._wantsToPlay = true;
+    if (persistIntent) writeStoredAudioEnabled(true);
     if (this._status !== "playing") {
       this._status = "loading";
       this._message = "Starting music…";
@@ -88,7 +109,9 @@ class AudioManager {
           // Autoplay was blocked: start on the first user gesture instead.
           this._wantsToPlay = false;
           this._status = "blocked";
-          this._message = "Click anywhere or press Play to start the music.";
+          this._message = shouldResumeAfterBlock
+            ? "Click anywhere to resume the music after refresh."
+            : "Click anywhere or press Play to start the music.";
           this._armUnlock();
         } else if (!this._wantsToPlay || error?.name === "AbortError") {
           // A pause() interrupted this play attempt — benign, not an error.
@@ -108,6 +131,7 @@ class AudioManager {
 
   pause() {
     this._wantsToPlay = false;
+    writeStoredAudioEnabled(false);
     this._disarmUnlock();
     if (this._audio) {
       this._audio.pause();
@@ -167,7 +191,7 @@ class AudioManager {
   tryAutoplay() {
     this._init();
     if (!this._audio || (this._wantsToPlay && this._playing)) return;
-    this.play();
+    this.play({ persistIntent: readStoredAudioEnabled() });
   }
 }
 

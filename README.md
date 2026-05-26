@@ -20,6 +20,26 @@ npm run build
 npm run preview
 ```
 
+## Tests
+
+Run the automated test suite:
+
+```bash
+npm run test
+```
+
+Check test coverage:
+
+```bash
+npm run test:coverage
+```
+
+What the tests cover:
+
+- `src/utils/audioManager.test.js` verifies the clicking game song setup, pause/play state, and the desktop refresh flow that resumes music on the next user interaction when browser autoplay is blocked.
+- `src/utils/clickingGame.test.js` verifies score storage, score change events, click count formatting, and local leaderboard cleanup/sorting.
+- `src/utils/leaderboards.test.js` verifies formatting helpers and RuneProfile/Wise Old Man activity descriptions used by the stats and leaderboard pages.
+
 ## Cloudflare Pages
 
 Use these settings in Cloudflare Pages:
