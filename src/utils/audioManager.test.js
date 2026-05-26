@@ -62,8 +62,7 @@ describe("AudioManager", () => {
     playError = notAllowed;
     const manager = new AudioManager();
 
-    manager.tryAutoplay();
-    await Promise.resolve();
+    await manager.tryAutoplay();
 
     expect(manager.status).toBe("blocked");
     expect(manager.message).toBe("Click anywhere to resume the music after refresh.");
@@ -83,8 +82,7 @@ describe("AudioManager", () => {
     playError = notAllowed;
     const manager = new AudioManager();
 
-    manager.tryAutoplay();
-    await Promise.resolve();
+    await manager.tryAutoplay();
 
     expect(manager.status).toBe("blocked");
     expect(manager.message).toBe("Click anywhere or press Play to start the music.");

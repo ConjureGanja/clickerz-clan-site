@@ -191,7 +191,7 @@ export class AudioManager {
   tryAutoplay() {
     this._init();
     if (!this._audio || (this._wantsToPlay && this._playing)) return;
-    this.play({ persistIntent: readStoredAudioEnabled() });
+    return this.play({ persistIntent: readStoredAudioEnabled() });
   }
 }
 
