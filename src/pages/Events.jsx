@@ -87,7 +87,13 @@ export default function Events() {
         setComps(data);
         setLoading(false);
 
-        const finished = data.filter((c) => c.status === "finished");
+        const finished = data
+          .filter((c) => c.status === "finished")
+          .sort(
+            (a, b) =>
+              new Date(b.endsAt ?? b.startsAt ?? 0).getTime() -
+              new Date(a.endsAt ?? a.startsAt ?? 0).getTime(),
+          );
         const lastSotw = finished.find(
           (c) => WOM_SKILLS.has(c.metric)
         );
@@ -101,7 +107,14 @@ export default function Events() {
 
   const ongoing = comps.filter((c) => c.status === "ongoing");
   const upcoming = comps.filter((c) => c.status === "upcoming");
-  const finished = comps.filter((c) => c.status === "finished").slice(0, 4);
+  const finished = comps
+    .filter((c) => c.status === "finished")
+    .sort(
+      (a, b) =>
+        new Date(b.endsAt ?? b.startsAt ?? 0).getTime() -
+        new Date(a.endsAt ?? a.startsAt ?? 0).getTime(),
+    )
+    .slice(0, 4);
 
   const renderEventCard = (comp) => {
     const isSkill = WOM_SKILLS.has(comp.metric);

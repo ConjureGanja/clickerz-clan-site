@@ -15,6 +15,8 @@ const DEFAULT_ACTIVITY_TYPES = [
 ];
 
 const RUNEPROFILE_SUMMARY_CONCURRENCY = 4;
+const RUNEPROFILE_SUMMARY_MAX_REQUESTS = 50;
+const runeProfileSummaryCache = new Map();
 
 async function fetchJson(url) {
   const response = await fetch(url);
@@ -222,7 +224,8 @@ function buildSpotlight(summary) {
 }
 
 async function fetchRuneProfileSummaries(usernames) {
-  const uniqueNames = [...new Set(usernames.filter(Boolean))];
+  const uniqueNames = [...new Set(usernames.map((username) => username?.trim()).filter(Boolean))]
+    .slice(0, RUNEPROFILE_SUMMARY_MAX_REQUESTS);
 
   if (uniqueNames.length === 0) {
     return [];
@@ -233,9 +236,22 @@ async function fetchRuneProfileSummaries(usernames) {
   for (let batchStartIndex = 0; batchStartIndex < uniqueNames.length; batchStartIndex += RUNEPROFILE_SUMMARY_CONCURRENCY) {
     const batch = uniqueNames.slice(batchStartIndex, batchStartIndex + RUNEPROFILE_SUMMARY_CONCURRENCY);
     const batchResults = await Promise.allSettled(
-      batch.map((username) =>
-        fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`),
-      ),
+      batch.map((username) => {
+        const cacheKey = username.toLowerCase();
+        const cachedSummaryRequest = runeProfileSummaryCache.get(cacheKey);
+
+        if (cachedSummaryRequest) {
+          return cachedSummaryRequest;
+        }
+
+        const summaryRequest = fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`)
+          .catch((error) => {
+            runeProfileSummaryCache.delete(cacheKey);
+            throw error;
+          });
+        runeProfileSummaryCache.set(cacheKey, summaryRequest);
+        return summaryRequest;
+      }),
     );
 
     results.push(...batchResults);
