@@ -14,6 +14,8 @@ const DEFAULT_ACTIVITY_TYPES = [
   "new_item_obtained",
 ];
 
+const RUNEPROFILE_SUMMARY_CONCURRENCY = 4;
+
 async function fetchJson(url) {
   const response = await fetch(url);
 
@@ -171,6 +173,21 @@ function sumProgress(items) {
   );
 }
 
+function getDisplayName(player) {
+  return player?.displayName ?? player?.username ?? player?.name ?? null;
+}
+
+function getGroupMemberNames(groupInfo) {
+  const memberships = [
+    ...(Array.isArray(groupInfo?.memberships) ? groupInfo.memberships : []),
+    ...(Array.isArray(groupInfo?.group?.memberships) ? groupInfo.group.memberships : []),
+  ];
+
+  return memberships
+    .map((membership) => getDisplayName(membership.player) ?? getDisplayName(membership))
+    .filter(Boolean);
+}
+
 function buildSpotlight(summary) {
   const diaryProgress = sumProgress(summary.achievementDiaries ?? []);
   const combatProgress = sumProgress(summary.combatAchievements ?? []);
@@ -205,17 +222,24 @@ function buildSpotlight(summary) {
 }
 
 async function fetchRuneProfileSummaries(usernames) {
-  const uniqueNames = [...new Set(usernames.filter(Boolean))].slice(0, 12);
+  const uniqueNames = [...new Set(usernames.filter(Boolean))];
 
   if (uniqueNames.length === 0) {
     return [];
   }
 
-  const results = await Promise.allSettled(
-    uniqueNames.map((username) =>
-      fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`),
-    ),
-  );
+  const results = [];
+
+  for (let batchStartIndex = 0; batchStartIndex < uniqueNames.length; batchStartIndex += RUNEPROFILE_SUMMARY_CONCURRENCY) {
+    const batch = uniqueNames.slice(batchStartIndex, batchStartIndex + RUNEPROFILE_SUMMARY_CONCURRENCY);
+    const batchResults = await Promise.allSettled(
+      batch.map((username) =>
+        fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`),
+      ),
+    );
+
+    results.push(...batchResults);
+  }
 
   return results
     .filter((result) => result.status === "fulfilled")
@@ -308,6 +332,7 @@ export async function fetchLeaderboardSnapshot() {
     monthEHB: mapGainers(monthEhbResult, "ehb"),
   };
 
+  const groupInfo = groupInfoResult.status === "fulfilled" ? groupInfoResult.value : null;
   const achievements = achievementsResult.status === "fulfilled" && Array.isArray(achievementsResult.value)
     ? achievementsResult.value
     : [];
@@ -316,10 +341,12 @@ export async function fetchLeaderboardSnapshot() {
     : [];
 
   const spotlightNames = [
+    ...getGroupMemberNames(groupInfo),
     ...hiscores.overall.slice(0, 5).map((row) => row.name),
     ...hiscores.ehb.slice(0, 5).map((row) => row.name),
     ...gainers.weekXP.slice(0, 4).map((row) => row.name),
     ...gainers.monthXP.slice(0, 4).map((row) => row.name),
+    ...achievements.map((achievement) => achievement.player?.displayName),
   ];
 
   const [activitiesResult, spotlightResult] = await Promise.allSettled([
@@ -337,7 +364,7 @@ export async function fetchLeaderboardSnapshot() {
   const totalWeeklyXp = gainers.weekXP.reduce((sum, row) => sum + (row.rawGained ?? 0), 0);
 
   return {
-    groupInfo: groupInfoResult.status === "fulfilled" ? groupInfoResult.value : null,
+    groupInfo,
     hiscores,
     gainers,
     achievements,
