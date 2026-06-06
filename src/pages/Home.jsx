@@ -19,8 +19,8 @@ const WEEKLY_EVENTS = {
     notes: "Top 3 split every week. Track via Wise Old Man; screenshots can be requested as backup.",
     title: "SOTW — Weekly Rotation",
     subtitle: "Current SOTW updates automatically from Wise Old Man.",
-    startDate: "See Wise Old Man",
-    endDate: "See Wise Old Man",
+    startDate: null,
+    endDate: null,
     ctaLabel: "View SOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
@@ -30,8 +30,8 @@ const WEEKLY_EVENTS = {
     notes: "Top 3 split every week. Screenshots or Wise Old Man tracking required.",
     title: "BOTW — Weekly Rotation",
     subtitle: "Current BOTW updates automatically from Wise Old Man.",
-    startDate: "See Wise Old Man",
-    endDate: "See Wise Old Man",
+    startDate: null,
+    endDate: null,
     ctaLabel: "View BOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
@@ -339,16 +339,16 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
     return womComps
       .filter(predicate)
       .sort((a, b) => {
-        const statusDiff =
-          (statusPriority[a.status] ?? 2) - (statusPriority[b.status] ?? 2);
+        const priorityA = statusPriority[a.status] ?? 2;
+        const priorityB = statusPriority[b.status] ?? 2;
+        const statusDiff = priorityA - priorityB;
 
         if (statusDiff !== 0) return statusDiff;
 
-        const isFinished = (a.status ?? "finished") === "finished";
         const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
         const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
 
-        return isFinished ? timestampB - timestampA : timestampA - timestampB;
+        return priorityA === 2 ? timestampB - timestampA : timestampA - timestampB;
       })[0];
   };
 
@@ -449,11 +449,11 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
                 <div className="event-card__meta">
                   <div>
                     <span className="event-card__label">Start</span>
-                    <strong>{event.startDate}</strong>
+                    <strong>{event.startDate ?? "TBD"}</strong>
                   </div>
                   <div>
                     <span className="event-card__label">End</span>
-                    <strong>{event.endDate}</strong>
+                    <strong>{event.endDate ?? "TBD"}</strong>
                   </div>
                 </div>
 

@@ -16,6 +16,7 @@ const DEFAULT_ACTIVITY_TYPES = [
 
 const RUNEPROFILE_SUMMARY_CONCURRENCY = 4;
 const RUNEPROFILE_SUMMARY_MAX_REQUESTS = 50;
+const RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE = 200;
 const runeProfileSummaryCache = new Map();
 
 async function fetchJson(url) {
@@ -238,18 +239,24 @@ async function fetchRuneProfileSummaries(usernames) {
     const batchResults = await Promise.allSettled(
       batch.map((username) => {
         const cacheKey = username.toLowerCase();
-        const cachedSummaryRequest = runeProfileSummaryCache.get(cacheKey);
+        const cachedSummary = runeProfileSummaryCache.get(cacheKey);
 
-        if (cachedSummaryRequest) {
-          return cachedSummaryRequest;
+        if (cachedSummary) {
+          return cachedSummary;
         }
 
         const summaryRequest = fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`)
-          .catch((error) => {
-            runeProfileSummaryCache.delete(cacheKey);
-            throw error;
+          .then((summary) => {
+            if (
+              runeProfileSummaryCache.size >= RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE &&
+              !runeProfileSummaryCache.has(cacheKey)
+            ) {
+              const oldestKey = runeProfileSummaryCache.keys().next().value;
+              runeProfileSummaryCache.delete(oldestKey);
+            }
+            runeProfileSummaryCache.set(cacheKey, summary);
+            return summary;
           });
-        runeProfileSummaryCache.set(cacheKey, summaryRequest);
         return summaryRequest;
       }),
     );
