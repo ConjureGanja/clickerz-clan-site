@@ -230,8 +230,8 @@ async function fetchRuneProfileSummaries(usernames) {
 
   const results = [];
 
-  for (let index = 0; index < uniqueNames.length; index += RUNEPROFILE_SUMMARY_CONCURRENCY) {
-    const batch = uniqueNames.slice(index, index + RUNEPROFILE_SUMMARY_CONCURRENCY);
+  for (let batchStartIndex = 0; batchStartIndex < uniqueNames.length; batchStartIndex += RUNEPROFILE_SUMMARY_CONCURRENCY) {
+    const batch = uniqueNames.slice(batchStartIndex, batchStartIndex + RUNEPROFILE_SUMMARY_CONCURRENCY);
     const batchResults = await Promise.allSettled(
       batch.map((username) =>
         fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`),
