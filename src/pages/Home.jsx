@@ -15,23 +15,23 @@ const SITE_LINKS = {
 const WEEKLY_EVENTS = {
   sotw: {
     enabled: true,
-    prize: "25,000,000 GP",
-    notes: "Track via Wise Old Man. Screenshots required as backup. May the best thief win.",
-    title: "SOTW — Thieving",
-    subtitle: "Race for the most Thieving XP this week. 25M GP pot on the line — get pickpocketing!",
-    startDate: "March 31, 2026 · 8PM EST",
-    endDate: "April 7, 2026 · 8PM EST",
+    prize: "5,000,000 GP (1st place)",
+    notes: "Weekly payout is 5M GP to 1st place only. Track via Wise Old Man; screenshots can be requested as backup.",
+    title: "SOTW — Weekly Rotation",
+    subtitle: "Current SOTW updates automatically from Wise Old Man.",
+    startDate: null,
+    endDate: null,
     ctaLabel: "View SOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
   botw: {
-    enabled: false,
-    prize: "1st: 3M · 2nd: 2M · 3rd: 1M",
-    notes: "Screenshots or Wise Old Man tracking required.",
-    title: "BOTW — Scurrius",
-    subtitle: "Highest kill count by reset wins.",
-    startDate: "March 13, 2026",
-    endDate: "March 16, 2026",
+    enabled: true,
+    prize: "5,000,000 GP (1st place)",
+    notes: "Weekly payout is 5M GP to 1st place only. Screenshots or Wise Old Man tracking required.",
+    title: "BOTW — Weekly Rotation",
+    subtitle: "Current BOTW updates automatically from Wise Old Man.",
+    startDate: null,
+    endDate: null,
     ctaLabel: "View BOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
@@ -339,15 +339,16 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
     return womComps
       .filter(predicate)
       .sort((a, b) => {
-        const statusDiff =
-          (statusPriority[a.status] ?? 2) - (statusPriority[b.status] ?? 2);
+        const priorityA = statusPriority[a.status] ?? 2;
+        const priorityB = statusPriority[b.status] ?? 2;
+        const statusDiff = priorityA - priorityB;
 
         if (statusDiff !== 0) return statusDiff;
 
-        const startA = a.startsAt ? new Date(a.startsAt).getTime() : Number.POSITIVE_INFINITY;
-        const startB = b.startsAt ? new Date(b.startsAt).getTime() : Number.POSITIVE_INFINITY;
+        const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
+        const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
 
-        return startA - startB;
+        return priorityA === 2 ? timestampB - timestampA : timestampA - timestampB;
       })[0];
   };
 
@@ -448,16 +449,16 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
                 <div className="event-card__meta">
                   <div>
                     <span className="event-card__label">Start</span>
-                    <strong>{event.startDate}</strong>
+                    <strong>{event.startDate ?? "TBD"}</strong>
                   </div>
                   <div>
                     <span className="event-card__label">End</span>
-                    <strong>{event.endDate}</strong>
+                    <strong>{event.endDate ?? "TBD"}</strong>
                   </div>
                 </div>
 
                 <div className="event-card__detail">
-                  <span className="event-card__label">Prize Pool</span>
+                  <span className="event-card__label">Prize</span>
                   <p className="event-card__prize">{event.prize}</p>
                 </div>
 
@@ -732,10 +733,11 @@ export default function Home() {
     fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/competitions?limit=20`)
       .then(r => r.json())
       .then(comps => {
-        const active = comps.filter(c => c.status === "ongoing" || c.status === "upcoming");
-        setWomComps(active);
+        setWomComps(comps);
 
-        const finished = comps.filter(c => c.status === "finished");
+        const finished = comps
+          .filter(c => c.status === "finished")
+          .sort((a, b) => new Date(b.endsAt ?? b.startsAt ?? 0).getTime() - new Date(a.endsAt ?? a.startsAt ?? 0).getTime());
         const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric));
         const lastBotw = finished.find(c => !WOM_SKILLS.has(c.metric));
 

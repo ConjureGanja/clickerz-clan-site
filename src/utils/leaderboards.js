@@ -15,6 +15,9 @@ const DEFAULT_ACTIVITY_TYPES = [
 ];
 
 const RUNEPROFILE_SUMMARY_CONCURRENCY = 4;
+const RUNEPROFILE_SUMMARY_MAX_REQUESTS = 50;
+const RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE = 200;
+const runeProfileSummaryCache = new Map();
 
 async function fetchJson(url) {
   const response = await fetch(url);
@@ -222,7 +225,8 @@ function buildSpotlight(summary) {
 }
 
 async function fetchRuneProfileSummaries(usernames) {
-  const uniqueNames = [...new Set(usernames.filter(Boolean))];
+  const uniqueNames = [...new Set(usernames.map((username) => username?.trim()).filter(Boolean))]
+    .slice(0, RUNEPROFILE_SUMMARY_MAX_REQUESTS);
 
   if (uniqueNames.length === 0) {
     return [];
@@ -233,9 +237,28 @@ async function fetchRuneProfileSummaries(usernames) {
   for (let batchStartIndex = 0; batchStartIndex < uniqueNames.length; batchStartIndex += RUNEPROFILE_SUMMARY_CONCURRENCY) {
     const batch = uniqueNames.slice(batchStartIndex, batchStartIndex + RUNEPROFILE_SUMMARY_CONCURRENCY);
     const batchResults = await Promise.allSettled(
-      batch.map((username) =>
-        fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`),
-      ),
+      batch.map((username) => {
+        const cacheKey = username.toLowerCase();
+        const cachedSummary = runeProfileSummaryCache.get(cacheKey);
+
+        if (cachedSummary) {
+          return cachedSummary;
+        }
+
+        const summaryRequest = fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`)
+          .then((summary) => {
+            if (
+              runeProfileSummaryCache.size >= RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE &&
+              !runeProfileSummaryCache.has(cacheKey)
+            ) {
+              const oldestKey = runeProfileSummaryCache.keys().next().value;
+              runeProfileSummaryCache.delete(oldestKey);
+            }
+            runeProfileSummaryCache.set(cacheKey, summary);
+            return summary;
+          });
+        return summaryRequest;
+      }),
     );
 
     results.push(...batchResults);
