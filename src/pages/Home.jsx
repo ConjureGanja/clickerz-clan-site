@@ -15,8 +15,8 @@ const SITE_LINKS = {
 const WEEKLY_EVENTS = {
   sotw: {
     enabled: true,
-    prize: "1st: 3M · 2nd: 2M · 3rd: 1M",
-    notes: "Top 3 split every week. Track via Wise Old Man; screenshots can be requested as backup.",
+    prize: "5,000,000 GP (1st place)",
+    notes: "Weekly payout is 5M GP to 1st place only. Track via Wise Old Man; screenshots can be requested as backup.",
     title: "SOTW — Weekly Rotation",
     subtitle: "Current SOTW updates automatically from Wise Old Man.",
     startDate: null,
@@ -26,8 +26,8 @@ const WEEKLY_EVENTS = {
   },
   botw: {
     enabled: true,
-    prize: "1st: 3M · 2nd: 2M · 3rd: 1M",
-    notes: "Top 3 split every week. Screenshots or Wise Old Man tracking required.",
+    prize: "5,000,000 GP (1st place)",
+    notes: "Weekly payout is 5M GP to 1st place only. Screenshots or Wise Old Man tracking required.",
     title: "BOTW — Weekly Rotation",
     subtitle: "Current BOTW updates automatically from Wise Old Man.",
     startDate: null,
@@ -458,7 +458,7 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
                 </div>
 
                 <div className="event-card__detail">
-                  <span className="event-card__label">Prize Pool</span>
+                  <span className="event-card__label">Prize</span>
                   <p className="event-card__prize">{event.prize}</p>
                 </div>
 

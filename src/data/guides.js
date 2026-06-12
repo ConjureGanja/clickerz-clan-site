@@ -11,10 +11,10 @@ export const GUIDES = [
     tone: "sky",
     content: [
       "Welcome to Clickerz — one of OSRS's friendliest clans. If you've just joined or are thinking about it, this guide covers everything you need to get settled in.",
-      "The first thing you'll want to do is join our Discord server. This is where all announcements, events, and giveaways happen. Without Discord, you'll miss out on prize pools and community updates. Use the invite link in the website header or ask any clan member in-game.",
+      "The first thing you'll want to do is join our Discord server. This is where all announcements, events, and giveaways happen. Without Discord, you'll miss out on weekly event updates and first-place prize announcements. Use the invite link in the website header or ask any clan member in-game.",
       "Once you're in Discord, head to the #verify-rsn channel and drop your RuneScape username. This links your account to our Wise Old Man group so your gains count toward SOTW and BOTW competitions. Your RSN must match exactly what appears on the OSRS hiscores.",
       "Clan ranks are earned through activity and community involvement. Starting as a Recruit, you can rise to Regular, Corporal, Sergeant, and beyond. There are no strict requirements beyond being present and friendly. Show up, help out, and the ranks follow.",
-      "SOTW (Skill of the Week) and BOTW (Boss of the Week) run every Monday from 8 PM EST to the following Monday at 8 PM EST. Participation is automatic once your RSN is verified on Wise Old Man. Winners receive GP prizes posted and distributed in Discord.",
+      "SOTW (Skill of the Week) and BOTW (Boss of the Week) run every Monday from 8 PM EST to the following Monday at 8 PM EST. Participation is automatic once your RSN is verified on Wise Old Man. Each weekly event pays 5M GP to 1st place, and winners are posted in Discord.",
       "The clan chat in-game is 'Clickerz' — type /clan in the chatbox to find us. Feel free to ask for help, share drops, or just hang out. We're a friendly bunch and we genuinely want to see you succeed.",
     ],
   },
