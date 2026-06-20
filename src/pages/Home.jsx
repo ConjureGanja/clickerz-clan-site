@@ -351,13 +351,13 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
         if (priorityA === 2) {
           const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
           const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
-          return timestampB - timestampA;
+          return (Number.isFinite(timestampB) ? timestampB : 0) - (Number.isFinite(timestampA) ? timestampA : 0);
         }
 
         const timestampA = a.startsAt ? new Date(a.startsAt).getTime() : Infinity;
         const timestampB = b.startsAt ? new Date(b.startsAt).getTime() : Infinity;
 
-        return timestampA - timestampB;
+        return (Number.isFinite(timestampA) ? timestampA : Infinity) - (Number.isFinite(timestampB) ? timestampB : Infinity);
       })[0];
   };
 
