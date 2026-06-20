@@ -118,7 +118,7 @@ function PreviousWinnersRow({ sotwWinners, botwWinners }) {
     <div style={{ marginTop: "3rem" }}>
       <div className="section-header" style={{ textAlign: "left", marginBottom: "1.5rem" }}>
         <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: "14px", color: "var(--text-muted)" }}>
-          Last Week&apos;s Champions
+          Last Week's Champions
         </h3>
       </div>
       <div className="winners-grid">

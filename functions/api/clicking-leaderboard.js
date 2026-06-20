@@ -15,13 +15,19 @@ function normalizeRows(rows) {
   if (!Array.isArray(rows)) return [];
 
   return rows
-    .filter((row) => row && typeof row.name === "string" && Number.isFinite(row.score))
-    .map((row) => ({
-      id: String(row.id || `${row.name}-${row.score}`),
-      name: row.name.trim().slice(0, 24) || "Anonymous Clicker",
-      score: Math.max(0, Math.round(row.score)),
-      date: row.date || new Date().toISOString(),
-    }))
+    .filter((row) => row && typeof row.name === "string")
+    .map((row) => {
+      const safeScore = Number(row.score);
+      if (!Number.isFinite(safeScore)) return null;
+
+      return {
+        id: String(row.id || `${row.name}-${safeScore}`),
+        name: row.name.trim().slice(0, 24) || "Anonymous Clicker",
+        score: Math.max(0, Math.round(safeScore)),
+        date: row.date || new Date().toISOString(),
+      };
+    })
+    .filter(Boolean)
     .sort((a, b) => b.score - a.score)
     .slice(0, MAX_LEADERBOARD_ENTRIES);
 }
@@ -64,10 +70,6 @@ export async function onRequestPost(context) {
 
   const name = String(body?.name || "").trim().slice(0, 24) || "Anonymous Clicker";
   const score = Math.max(0, Math.round(Number(body?.score) || 0));
-
-  if (!Number.isFinite(score)) {
-    return jsonResponse({ error: "Invalid score." }, 400);
-  }
 
   const rows = await readLeaderboard(context.env);
   const nextRows = normalizeRows([
