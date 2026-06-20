@@ -65,6 +65,12 @@ function formatCompDate(isoString) {
   });
 }
 
+function getCompetitionTimestamp(isoString, fallback) {
+  if (!isoString) return fallback;
+  const timestamp = new Date(isoString).getTime();
+  return Number.isNaN(timestamp) ? fallback : timestamp;
+}
+
 function FloatingParticle({ delay, x, size, emoji }) {
   return (
     <div
@@ -349,13 +355,13 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
         if (statusDiff !== 0) return statusDiff;
 
         if (priorityA === 2) {
-          const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
-          const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
+          const timestampA = getCompetitionTimestamp(a.endsAt ?? a.startsAt, -Infinity);
+          const timestampB = getCompetitionTimestamp(b.endsAt ?? b.startsAt, -Infinity);
           return timestampB - timestampA;
         }
 
-        const timestampA = a.startsAt ? new Date(a.startsAt).getTime() : Infinity;
-        const timestampB = b.startsAt ? new Date(b.startsAt).getTime() : Infinity;
+        const timestampA = getCompetitionTimestamp(a.startsAt, Infinity);
+        const timestampB = getCompetitionTimestamp(b.startsAt, Infinity);
 
         return timestampA - timestampB;
       })[0];
