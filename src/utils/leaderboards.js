@@ -240,7 +240,7 @@ async function fetchRuneProfileSummaries(usernames) {
     .slice(0, RUNEPROFILE_SUMMARY_MAX_REQUESTS);
 
   if (uniqueNames.length === 0) {
-    return [];
+    return { spotlights: [], partial: false };
   }
 
   const results = [];
