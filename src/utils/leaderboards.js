@@ -277,9 +277,12 @@ async function fetchRuneProfileSummaries(usernames) {
     results.push(...batchResults);
   }
 
-  return results
-    .filter((result) => result.status === "fulfilled")
-    .map((result) => buildSpotlight(result.value));
+  return {
+    spotlights: results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => buildSpotlight(result.value)),
+    partial: results.some((result) => result.status === "rejected"),
+  };
 }
 
 async function fetchRuneProfileClanActivities(limit = 12) {
@@ -406,7 +409,10 @@ async function _fetchLeaderboardSnapshot() {
   ]);
 
   const clanActivities = activitiesResult.status === "fulfilled" ? activitiesResult.value : [];
-  const spotlights = spotlightResult.status === "fulfilled" ? spotlightResult.value : [];
+  const spotlightPayload =
+    spotlightResult.status === "fulfilled" ? spotlightResult.value : { spotlights: [], partial: true };
+  const spotlights = spotlightPayload.spotlights;
+  const spotlightHadPartialFailure = spotlightPayload.partial;
 
   const biggestDrop = clanActivities
     .filter((activity) => activity.type === "valuable_drop")
@@ -435,7 +441,8 @@ async function _fetchLeaderboardSnapshot() {
       partial:
         womRequests.some((result) => result.status === "rejected") ||
         activitiesResult.status === "rejected" ||
-        spotlightResult.status === "rejected",
+        spotlightResult.status === "rejected" ||
+        spotlightHadPartialFailure,
     },
   };
 }
