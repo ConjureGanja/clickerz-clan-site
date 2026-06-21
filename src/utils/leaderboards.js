@@ -292,7 +292,11 @@ async function fetchRuneProfileClanActivities(limit = 12) {
 export function fetchLeaderboardSnapshot() {
   return cachedFetch(SNAPSHOT_CACHE_KEY, SNAPSHOT_TTL_MS, _fetchLeaderboardSnapshot).then(
     (snapshot) => {
-      if (snapshot?.errors?.wom || snapshot?.errors?.runeProfile) {
+      if (
+        snapshot?.errors?.wom ||
+        snapshot?.errors?.runeProfile ||
+        snapshot?.errors?.partial
+      ) {
         invalidateCache(SNAPSHOT_CACHE_KEY);
       }
       return snapshot;
@@ -425,6 +429,10 @@ async function _fetchLeaderboardSnapshot() {
       runeProfile:
         activitiesResult.status === "rejected" &&
         (spotlightResult.status === "rejected" || spotlights.length === 0),
+      partial:
+        womRequests.some((result) => result.status === "rejected") ||
+        activitiesResult.status === "rejected" ||
+        spotlightResult.status === "rejected",
     },
   };
 }
