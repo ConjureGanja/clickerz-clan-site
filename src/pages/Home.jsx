@@ -61,7 +61,10 @@ function formatMetricName(metric) {
 }
 
 function formatCompDate(isoString) {
-  return new Date(isoString).toLocaleString("en-US", {
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return null;
+  return date.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -355,10 +358,16 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
 
         if (statusDiff !== 0) return statusDiff;
 
-        const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
-        const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
+        if (priorityA === 2) {
+          const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
+          const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
+          return (Number.isFinite(timestampB) ? timestampB : 0) - (Number.isFinite(timestampA) ? timestampA : 0);
+        }
 
-        return priorityA === 2 ? timestampB - timestampA : timestampA - timestampB;
+        const timestampA = a.startsAt ? new Date(a.startsAt).getTime() : Infinity;
+        const timestampB = b.startsAt ? new Date(b.startsAt).getTime() : Infinity;
+
+        return (Number.isFinite(timestampA) ? timestampA : Infinity) - (Number.isFinite(timestampB) ? timestampB : Infinity);
       })[0];
   };
 
@@ -752,6 +761,7 @@ export default function Home() {
 
     fetchGroupCompetitions()
       .then(comps => {
+        if (!Array.isArray(comps)) return;
         setWomComps(comps);
 
         const finished = comps

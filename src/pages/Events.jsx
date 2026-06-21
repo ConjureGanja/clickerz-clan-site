@@ -1,22 +1,75 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatGained, fetchCompetitionWinners, fetchGroupCompetitions } from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
 
+const WOM_GROUP_ID = 21596;
+
+const SITE_LINKS = {
+  discord: "https://discord.gg/cju3DSSdju",
+  wom: `https://wiseoldman.net/groups/${WOM_GROUP_ID}`,
+};
+
+const WEEKLY_EVENTS = {
+  sotw: {
+    enabled: true,
+    title: "SOTW — Weekly Rotation",
+    subtitle: "Current SOTW updates automatically from Wise Old Man.",
+    startDate: "Mondays · 8:00 PM EST",
+    endDate: "Next Monday · 7:59 PM EST",
+    prize: "5M GP to 1st place",
+    notes: "Track your gains all week. Verify your RSN in Discord before reset.",
+    ctaLabel: "View SOTW Details",
+    ctaHref: SITE_LINKS.discord,
+  },
+  botw: {
+    enabled: true,
+    title: "BOTW — Weekly Rotation",
+    subtitle: "Current BOTW updates automatically from Wise Old Man.",
+    startDate: "Mondays · 8:00 PM EST",
+    endDate: "Next Monday · 7:59 PM EST",
+    prize: "5M GP to 1st place",
+    notes: "Boss challenge for the week. Submit if Discord asks for proof.",
+    ctaLabel: "View BOTW Details",
+    ctaHref: SITE_LINKS.discord,
+  },
+};
+
 const WOM_SKILLS = new Set([
-  "overall", "attack", "defence", "strength", "hitpoints", "ranged",
-  "prayer", "magic", "cooking", "woodcutting", "fletching", "fishing",
-  "firemaking", "crafting", "smithing", "mining", "herblore", "agility",
-  "thieving", "slayer", "farming", "runecrafting", "hunter", "construction",
+  "overall",
+  "attack",
+  "defence",
+  "strength",
+  "hitpoints",
+  "ranged",
+  "prayer",
+  "magic",
+  "cooking",
+  "woodcutting",
+  "fletching",
+  "fishing",
+  "firemaking",
+  "crafting",
+  "smithing",
+  "mining",
+  "herblore",
+  "agility",
+  "thieving",
+  "slayer",
+  "farming",
+  "runecrafting",
+  "hunter",
+  "construction",
 ]);
 
-
-function formatMetricName(metric) {
+function formatMetricName(metric = "") {
   return metric
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatCompDate(isoString) {
+  if (!isoString) return null;
+
   return new Date(isoString).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -27,143 +80,187 @@ function formatCompDate(isoString) {
   });
 }
 
-
-function WinnerPodium({ comp, participations, isSkill }) {
+function PreviousWinnersRow({ sotwWinners, botwWinners }) {
+  if (!sotwWinners && !botwWinners) return null;
   const medals = ["🥇", "🥈", "🥉"];
-  const top3 = participations.slice(0, 3);
+
+  const renderMini = (winners, isSkill) => {
+    if (!winners) return null;
+    const top3 = (winners.participations ?? []).slice(0, 3);
+    const comp = winners.comp;
+
+    return (
+      <div className={`winner-card ${isSkill ? "winner-card--sky" : "winner-card--gold"}`}>
+        <div className="winner-card__header">
+          <span className="winner-card__icon">{isSkill ? "🎒" : "🐉"}</span>
+          <div>
+            <div className="winner-card__type">{isSkill ? "SOTW" : "BOTW"}</div>
+            <div className="winner-card__metric">{formatMetricName(comp.metric)}</div>
+          </div>
+          <span className="event-status event-status--finished">🏁 Finished</span>
+        </div>
+        <div className="podium-list">
+          {top3.map((p, i) => (
+            <div key={p.player?.displayName ?? i} className="podium-entry">
+              <span className="podium-medal">{medals[i]}</span>
+              <span className="podium-player">{p.player?.displayName ?? "—"}</span>
+              <span className="podium-gained">{formatGained(p.progress?.gained, isSkill)}</span>
+            </div>
+          ))}
+          {top3.length === 0 && <div className="podium-empty">No data yet.</div>}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className={`winner-card ${isSkill ? "winner-card--sky" : "winner-card--gold"}`}>
-      <div className="winner-card__header">
-        <span className="winner-card__icon">{isSkill ? "🎒" : "🐉"}</span>
-        <div>
-          <div className="winner-card__type">{isSkill ? "SOTW" : "BOTW"}</div>
-          <div className="winner-card__metric">{formatMetricName(comp.metric)}</div>
-        </div>
-        <span className="event-status event-status--finished">🏁 Finished</span>
+    <div style={{ marginTop: "3rem" }}>
+      <div className="section-header" style={{ textAlign: "left", marginBottom: "1.5rem" }}>
+        <h3 style={{ margin: 0, fontFamily: '"Press Start 2P", monospace', fontSize: "14px", color: "var(--text-muted)" }}>
+          Last Week's Champions
+        </h3>
       </div>
-
-      <div className="podium-list">
-        {top3.map((p, i) => (
-          <div key={p.player?.displayName ?? i} className="podium-entry">
-            <span className="podium-medal">{medals[i]}</span>
-            <span className="podium-player">{p.player?.displayName ?? "—"}</span>
-            <span className="podium-gained">
-              {formatGained(p.progress?.gained, isSkill)}
-            </span>
-          </div>
-        ))}
-        {top3.length === 0 && (
-          <div className="podium-empty">No participants recorded.</div>
-        )}
+      <div className="winners-grid">
+        {renderMini(sotwWinners, true)}
+        {renderMini(botwWinners, false)}
       </div>
-
-      <a
-        href={`https://wiseoldman.net/competitions/${comp.id}`}
-        target="_blank"
-        rel="noreferrer"
-        className="button button--secondary"
-        style={{ width: "100%", marginTop: "1rem", fontSize: "13px" }}
-      >
-        Full Results on WOM
-      </a>
     </div>
   );
 }
 
 export default function Events() {
-  const [comps, setComps] = useState([]);
+  const [womComps, setWomComps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sotwWinners, setSotwWinners] = useState(null);
   const [botwWinners, setBotwWinners] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     fetchGroupCompetitions()
       .then((data) => {
-        setComps(data);
+        if (cancelled) return;
+
+        const safeData = Array.isArray(data) ? data : [];
+        setWomComps(safeData);
         setLoading(false);
 
-        const finished = data
+        const finished = safeData
           .filter((c) => c.status === "finished")
           .sort(
             (a, b) =>
               new Date(b.endsAt ?? b.startsAt ?? 0).getTime() -
               new Date(a.endsAt ?? a.startsAt ?? 0).getTime(),
           );
-        const lastSotw = finished.find(
-          (c) => WOM_SKILLS.has(c.metric)
-        );
+
+        const lastSotw = finished.find((c) => WOM_SKILLS.has(c.metric));
         const lastBotw = finished.find((c) => !WOM_SKILLS.has(c.metric));
 
-        if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
-        if (lastBotw) fetchCompetitionWinners(lastBotw).then(setBotwWinners);
+        if (lastSotw) fetchCompetitionWinners(lastSotw).then((value) => !cancelled && setSotwWinners(value));
+        if (lastBotw) fetchCompetitionWinners(lastBotw).then((value) => !cancelled && setBotwWinners(value));
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const ongoing = comps.filter((c) => c.status === "ongoing");
-  const upcoming = comps.filter((c) => c.status === "upcoming");
-  const finished = comps
-    .filter((c) => c.status === "finished")
-    .sort(
-      (a, b) =>
-        new Date(b.endsAt ?? b.startsAt ?? 0).getTime() -
-        new Date(a.endsAt ?? a.startsAt ?? 0).getTime(),
-    )
-    .slice(0, 4);
+  const cards = useMemo(() => {
+    const nextCards = [];
+    const statusPriority = {
+      ongoing: 0,
+      upcoming: 1,
+    };
 
-  const renderEventCard = (comp) => {
-    const isSkill = WOM_SKILLS.has(comp.metric);
-    const toneClass = isSkill ? "event-card--sky" : "event-card--gold";
-    const icon = isSkill ? "🎒" : "🐉";
-    const typeLabel = isSkill ? "SOTW" : "BOTW";
+    const getPreferredCompetition = (predicate) => {
+      return womComps
+        .filter(predicate)
+        .sort((a, b) => {
+          const priorityA = statusPriority[a.status] ?? 2;
+          const priorityB = statusPriority[b.status] ?? 2;
+          const statusDiff = priorityA - priorityB;
 
-    return (
-      <article key={comp.id} className={`event-card ${toneClass}`}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div className="event-card__icon">{icon}</div>
-          <span className={`event-status event-status--${comp.status}`}>
-            {comp.status === "ongoing" ? "🟢 Live" : comp.status === "upcoming" ? "🕐 Upcoming" : "🏁 Finished"}
-          </span>
-        </div>
+          if (statusDiff !== 0) return statusDiff;
 
-        <h3 className="event-card__title">
-          {typeLabel} — {formatMetricName(comp.metric)}
-        </h3>
-        <p className="event-card__subtitle">
-          {comp.title || `${comp.participantCount} participants competing for glory.`}
-        </p>
+          const timestampA = new Date(a.endsAt ?? a.startsAt ?? 0).getTime();
+          const timestampB = new Date(b.endsAt ?? b.startsAt ?? 0).getTime();
 
-        <div className="event-card__meta">
-          <div>
-            <span className="event-card__label">Starts</span>
-            <strong style={{ fontSize: "13px" }}>{formatCompDate(comp.startsAt)}</strong>
-          </div>
-          <div>
-            <span className="event-card__label">Ends</span>
-            <strong style={{ fontSize: "13px" }}>{formatCompDate(comp.endsAt)}</strong>
-          </div>
-        </div>
+          return priorityA === 2 ? timestampB - timestampA : timestampA - timestampB;
+        })[0];
+    };
 
-        <div className="event-card__detail">
-          <span className="event-card__label">Participants</span>
-          <p style={{ fontFamily: '"Press Start 2P", monospace', fontSize: "14px", color: "var(--text)" }}>
-            {comp.participantCount} Clickerz
-          </p>
-        </div>
+    const sotwComp = getPreferredCompetition((c) => WOM_SKILLS.has(c.metric));
+    const botwComp = getPreferredCompetition((c) => !WOM_SKILLS.has(c.metric));
 
-        <a
-          href={`https://wiseoldman.net/competitions/${comp.id}`}
-          target="_blank"
-          rel="noreferrer"
-          className="button button--secondary event-card__button"
-          style={{ width: "100%", marginTop: "1rem" }}
-        >
-          View Rankings
-        </a>
-      </article>
-    );
-  };
+    if (sotwComp) {
+      nextCards.push({
+        key: "sotw",
+        icon: "🎒",
+        toneClass: "event-card--sky",
+        title: sotwComp.title || `SOTW — ${formatMetricName(sotwComp.metric)}`,
+        subtitle: `${sotwComp.participantCount} participants competing for the most ${formatMetricName(sotwComp.metric)} XP this week.`,
+        startDate: formatCompDate(sotwComp.startsAt),
+        endDate: formatCompDate(sotwComp.endsAt),
+        prize: WEEKLY_EVENTS.sotw.prize,
+        notes: WEEKLY_EVENTS.sotw.notes,
+        ctaLabel: "View on Wise Old Man",
+        ctaHref: `https://wiseoldman.net/competitions/${sotwComp.id}`,
+        status: sotwComp.status,
+      });
+    } else if (WEEKLY_EVENTS.sotw.enabled) {
+      nextCards.push({
+        key: "sotw",
+        icon: "🎒",
+        toneClass: "event-card--sky",
+        title: WEEKLY_EVENTS.sotw.title,
+        subtitle: WEEKLY_EVENTS.sotw.subtitle,
+        startDate: WEEKLY_EVENTS.sotw.startDate,
+        endDate: WEEKLY_EVENTS.sotw.endDate,
+        prize: WEEKLY_EVENTS.sotw.prize,
+        notes: WEEKLY_EVENTS.sotw.notes,
+        ctaLabel: WEEKLY_EVENTS.sotw.ctaLabel,
+        ctaHref: WEEKLY_EVENTS.sotw.ctaHref,
+        status: null,
+      });
+    }
+
+    if (botwComp) {
+      nextCards.push({
+        key: "botw",
+        icon: "🐉",
+        toneClass: "event-card--gold",
+        title: botwComp.title || `BOTW — ${formatMetricName(botwComp.metric)}`,
+        subtitle: `${botwComp.participantCount} participants competing for the highest ${formatMetricName(botwComp.metric)} count this week.`,
+        startDate: formatCompDate(botwComp.startsAt),
+        endDate: formatCompDate(botwComp.endsAt),
+        prize: WEEKLY_EVENTS.botw.prize,
+        notes: WEEKLY_EVENTS.botw.notes,
+        ctaLabel: "View on Wise Old Man",
+        ctaHref: `https://wiseoldman.net/competitions/${botwComp.id}`,
+        status: botwComp.status,
+      });
+    } else if (WEEKLY_EVENTS.botw.enabled) {
+      nextCards.push({
+        key: "botw",
+        icon: "🐉",
+        toneClass: "event-card--gold",
+        title: WEEKLY_EVENTS.botw.title,
+        subtitle: WEEKLY_EVENTS.botw.subtitle,
+        startDate: WEEKLY_EVENTS.botw.startDate,
+        endDate: WEEKLY_EVENTS.botw.endDate,
+        prize: WEEKLY_EVENTS.botw.prize,
+        notes: WEEKLY_EVENTS.botw.notes,
+        ctaLabel: WEEKLY_EVENTS.botw.ctaLabel,
+        ctaHref: WEEKLY_EVENTS.botw.ctaHref,
+        status: null,
+      });
+    }
+
+    return nextCards;
+  }, [womComps]);
 
   return (
     <div className="events-page">
@@ -171,10 +268,11 @@ export default function Events() {
         <div className="hero-grid" aria-hidden="true" />
         <div className="container hero-content">
           <SectionBadge tone="gold">Clan Competitions</SectionBadge>
-          <h1 className="hero-title">Clan <span>Events</span></h1>
+          <h1 className="hero-title">
+            Clan <span>Events</span>
+          </h1>
           <p className="hero-subtitle">
-            Skill of the Week (SOTW) and Boss of the Week (BOTW).{" "}
-            Check here for live tracking and upcoming battles.
+            Skill of the Week (SOTW) and Boss of the Week (BOTW). Current event cards mirror the homepage event feed.
           </p>
           <p className="reset-note">🕗 Events reset every Monday at 8 PM EST</p>
         </div>
@@ -182,96 +280,77 @@ export default function Events() {
 
       <section className="page-section">
         <div className="container">
+          <div className="section-header">
+            <SectionBadge tone="gold">Weekly Events</SectionBadge>
+            <h2 className="section-title">SOTW / BOTW</h2>
+            <p className="section-subtitle">
+              Compete with your fellow Clickerz for glory and GP. Check Discord for details and to submit your scores.
+            </p>
+            <p className="reset-note">🕗 Events reset every Monday at 8 PM EST</p>
+          </div>
+
           {loading ? (
             <div className="leaderboard-loading">Fetching events from Wise Old Man...</div>
           ) : (
             <>
-              {/* Last Event Winners */}
-              {(sotwWinners || botwWinners) && (
-                <div style={{ marginBottom: "4rem" }}>
-                  <div className="section-header" style={{ textAlign: "left", marginBottom: "2rem" }}>
-                    <SectionBadge tone="gold">Previous Event</SectionBadge>
-                    <h2 className="section-title" style={{ fontSize: "20px" }}>Last Week&apos;s Winners</h2>
-                  </div>
-                  <div className="winners-grid">
-                    {sotwWinners && (
-                      <WinnerPodium
-                        comp={sotwWinners.comp}
-                        participations={sotwWinners.participations}
-                        isSkill={true}
-                      />
-                    )}
-                    {botwWinners && (
-                      <WinnerPodium
-                        comp={botwWinners.comp}
-                        participations={botwWinners.participations}
-                        isSkill={false}
-                      />
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="events-grid">
+                {cards.length > 0 ? (
+                  cards.map((event) => (
+                    <article key={event.key} className={`event-card ${event.toneClass}`}>
+                      <div className="event-card__icon">{event.icon}</div>
+                      {event.status && (
+                        <span className={`event-status event-status--${event.status}`}>
+                          {event.status === "ongoing" ? "🟢 Live" : "🕐 Upcoming"}
+                        </span>
+                      )}
+                      <h3 className="event-card__title">{event.title}</h3>
+                      <p className="event-card__subtitle">{event.subtitle}</p>
 
-              {ongoing.length > 0 && (
-                <div style={{ marginBottom: "4rem" }}>
-                  <div className="section-header" style={{ textAlign: "left", marginBottom: "2rem" }}>
-                    <SectionBadge tone="sky">Live Now</SectionBadge>
-                    <h2 className="section-title" style={{ fontSize: "20px" }}>Ongoing Battles</h2>
-                  </div>
-                  <div className="events-grid">
-                    {ongoing.map(renderEventCard)}
-                  </div>
-                </div>
-              )}
+                      <div className="event-card__meta">
+                        <div>
+                          <span className="event-card__label">Start</span>
+                          <strong>{event.startDate ?? "TBD"}</strong>
+                        </div>
+                        <div>
+                          <span className="event-card__label">End</span>
+                          <strong>{event.endDate ?? "TBD"}</strong>
+                        </div>
+                      </div>
 
-              {upcoming.length > 0 && (
-                <div style={{ marginBottom: "4rem" }}>
-                  <div className="section-header" style={{ textAlign: "left", marginBottom: "2rem" }}>
-                    <SectionBadge tone="purple">Coming Soon</SectionBadge>
-                    <h2 className="section-title" style={{ fontSize: "20px" }}>Upcoming Events</h2>
-                  </div>
-                  <div className="events-grid">
-                    {upcoming.map(renderEventCard)}
-                  </div>
-                </div>
-              )}
+                      <div className="event-card__detail">
+                        <span className="event-card__label">Prize</span>
+                        <p className="event-card__prize">{event.prize}</p>
+                      </div>
 
-              {finished.length > 0 && (
-                <div>
-                  <div className="section-header" style={{ textAlign: "left", marginBottom: "2rem" }}>
-                    <SectionBadge tone="teal">Recent History</SectionBadge>
-                    <h2 className="section-title" style={{ fontSize: "20px" }}>Past Competitions</h2>
-                  </div>
-                  <div className="events-grid">
-                    {finished.map(renderEventCard)}
-                  </div>
-                </div>
-              )}
+                      <div className="event-card__detail">
+                        <span className="event-card__label">Notes</span>
+                        <p>{event.notes}</p>
+                      </div>
 
-              {ongoing.length === 0 && upcoming.length === 0 && !loading && (
-                <div className="empty-state">
-                  No active or upcoming competitions found on Wise Old Man.
-                  Check back soon or head to Discord to suggest the next one!
-                </div>
-              )}
+                      <a
+                        href={event.ctaHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="button button--secondary event-card__button"
+                      >
+                        {event.ctaLabel}
+                      </a>
+                    </article>
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    No weekly events active right now. Events auto-fill from{" "}
+                    <a href={SITE_LINKS.wom} target="_blank" rel="noreferrer">
+                      Wise Old Man
+                    </a>{" "}
+                    when a competition is live.
+                  </div>
+                )}
+              </div>
+
+              <PreviousWinnersRow sotwWinners={sotwWinners} botwWinners={botwWinners} />
             </>
           )}
-        </div>
-      </section>
-
-      <section className="page-section page-section--gradient">
-        <div className="container narrow center-text">
-          <SectionBadge tone="purple">Participation</SectionBadge>
-          <h2 className="section-title">How to Enter</h2>
-          <p className="section-subtitle">
-            Participation is automatic for all clan members tracked on Wise Old Man.
-            Just make sure your RSN is updated in our Discord!
-          </p>
-          <div style={{ marginTop: "2rem" }}>
-            <a href="https://discord.gg/cju3DSSdju" target="_blank" rel="noreferrer" className="button button--primary">
-              Verify your RSN on Discord
-            </a>
-          </div>
         </div>
       </section>
     </div>

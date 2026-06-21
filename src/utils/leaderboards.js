@@ -233,7 +233,10 @@ function buildSpotlight(summary) {
 }
 
 async function fetchRuneProfileSummaries(usernames) {
-  const uniqueNames = [...new Set(usernames.map((username) => username?.trim()).filter(Boolean))]
+  const uniqueNames = [...new Map(
+    usernames.map((username) => username?.trim()).filter(Boolean)
+      .map((name) => [name.toLowerCase(), name])
+  ).values()]
     .slice(0, RUNEPROFILE_SUMMARY_MAX_REQUESTS);
 
   if (uniqueNames.length === 0) {
@@ -389,12 +392,12 @@ async function _fetchLeaderboardSnapshot() {
     : [];
 
   const spotlightNames = [
-    ...getGroupMemberNames(groupInfo),
     ...hiscores.overall.slice(0, 5).map((row) => row.name),
     ...hiscores.ehb.slice(0, 5).map((row) => row.name),
     ...gainers.weekXP.slice(0, 4).map((row) => row.name),
     ...gainers.monthXP.slice(0, 4).map((row) => row.name),
     ...achievements.map((achievement) => achievement.player?.displayName),
+    ...getGroupMemberNames(groupInfo),
   ];
 
   const [activitiesResult, spotlightResult] = await Promise.allSettled([

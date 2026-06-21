@@ -28,3 +28,12 @@ Use these settings in Cloudflare Pages:
 - **Build output directory:** `dist`
 
 The Vite config uses a relative `base` path so built assets resolve correctly in static hosting environments.
+
+### Shared clicking-game leaderboard
+
+The clicking game now uses a Cloudflare Pages Function at `/api/clicking-leaderboard`.
+
+Add a KV namespace binding in Cloudflare Pages so scores are shared across visitors:
+
+- **Binding name:** `CLICKERZ_LEADERBOARD`
+- **Type:** KV namespace

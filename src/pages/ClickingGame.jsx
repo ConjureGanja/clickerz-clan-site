@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import SectionBadge from "../components/SectionBadge";
 import {
+  fetchSharedClickLeaderboard,
   formatClickCount,
-  readClickLeaderboard,
   saveClickLeaderboardEntry,
   useClickerzScore,
 } from "../utils/clickingGame";
@@ -43,7 +43,8 @@ export default function ClickingGame() {
   const { score, addScore } = useClickerzScore();
   const audio = useAudioManager();
   const [floaters, setFloaters] = useState(() => Array.from({ length: 7 }, createFloatingEmoji));
-  const [leaderboard, setLeaderboard] = useState(readClickLeaderboard);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [playerName, setPlayerName] = useState("");
   const [submitMessage, setSubmitMessage] = useState("");
   const [lastBonus, setLastBonus] = useState(null);
@@ -80,6 +81,22 @@ export default function ClickingGame() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchSharedClickLeaderboard()
+      .then((rows) => {
+        if (!cancelled) setLeaderboard(rows);
+      })
+      .finally(() => {
+        if (!cancelled) setLeaderboardLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleFloaterClick = (floater) => {
     addScore(floater.value);
     setFloaters((current) => current.filter((item) => item.id !== floater.id));
@@ -90,12 +107,18 @@ export default function ClickingGame() {
     setFloaters((current) => current.filter((item) => item.id !== id));
   };
 
-  const handleSubmitScore = (event) => {
+  const handleSubmitScore = async (event) => {
     event.preventDefault();
-    const nextRows = saveClickLeaderboardEntry(playerName, score);
-    setLeaderboard(nextRows);
-    setPlayerName("");
-    setSubmitMessage("Score added to the Clickerz Clicking Game leaderboard!");
+    setSubmitMessage("");
+
+    try {
+      const nextRows = await saveClickLeaderboardEntry(playerName, score);
+      setLeaderboard(nextRows);
+      setPlayerName("");
+      setSubmitMessage("Score added to the shared Clickerz Clicking Game leaderboard!");
+    } catch {
+      setSubmitMessage("Could not reach shared leaderboard. Please try again in a moment.");
+    }
   };
 
   return (
@@ -129,7 +152,7 @@ export default function ClickingGame() {
               </div>
             )}
             <p>
-              Big emojis are worth more, skulls and traps take clicks away. Your score is saved in this browser.
+              Big emojis are worth more, skulls and traps take clicks away. Submit your score to the shared clan leaderboard.
             </p>
           </div>
 
@@ -178,12 +201,14 @@ export default function ClickingGame() {
             <SectionBadge tone="sky">Separate leaderboard</SectionBadge>
             <h2 className="section-title">Clickerz Clicking Game Leaders</h2>
             <p className="section-subtitle">
-              This is local to the clicking game and separate from Wise Old Man or RuneProfile leaderboards.
+              Shared across visitors and separate from Wise Old Man or RuneProfile leaderboards.
             </p>
           </div>
 
           <div className="leaderboard-card clicking-leaderboard-card">
-            {leaderboard.length === 0 ? (
+            {leaderboardLoading ? (
+              <div className="leaderboard-loading">Loading shared clicking leaderboard...</div>
+            ) : leaderboard.length === 0 ? (
               <div className="leaderboard-loading">No clicking game scores yet. Submit yours first.</div>
             ) : (
               leaderboard.slice(0, 10).map((row, index) => (

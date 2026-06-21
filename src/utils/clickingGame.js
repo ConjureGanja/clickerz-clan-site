@@ -4,6 +4,7 @@ export const CLICKERZ_SCORE_KEY = "clickerz-clicking-game-score";
 export const CLICKERZ_LEADERBOARD_KEY = "clickerz-clicking-game-leaderboard";
 export const CLICKERZ_SCORE_EVENT = "clickerz-clicking-game-score-change";
 export const CLICKERZ_AUDIO_SRC = "/audio/clickerz-clicking-game.mp3";
+export const CLICKERZ_LEADERBOARD_ENDPOINT = "/api/clicking-leaderboard";
 
 const MAX_LEADERBOARD_ENTRIES = 25;
 
@@ -59,8 +60,10 @@ export function addClickScore(amount = 1) {
 }
 
 export function readClickLeaderboard() {
-  const rows = readJson(CLICKERZ_LEADERBOARD_KEY, []);
+  return normalizeLeaderboardRows(readJson(CLICKERZ_LEADERBOARD_KEY, []));
+}
 
+function normalizeLeaderboardRows(rows) {
   if (!Array.isArray(rows)) return [];
 
   return rows
@@ -75,18 +78,36 @@ export function readClickLeaderboard() {
     .slice(0, MAX_LEADERBOARD_ENTRIES);
 }
 
-export function saveClickLeaderboardEntry(name, score) {
-  const trimmedName = name.trim().slice(0, 24) || "Anonymous Clicker";
-  const newEntry = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    name: trimmedName,
-    score: Math.max(0, Math.round(Number(score) || 0)),
-    date: new Date().toISOString(),
-  };
-  const nextRows = [...readClickLeaderboard(), newEntry]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, MAX_LEADERBOARD_ENTRIES);
+export async function fetchSharedClickLeaderboard() {
+  try {
+    const res = await fetch(CLICKERZ_LEADERBOARD_ENDPOINT, { method: "GET" });
+    if (!res.ok) throw new Error("Could not load shared leaderboard.");
 
+    const payload = await res.json();
+    const rows = normalizeLeaderboardRows(payload?.rows);
+    writeJson(CLICKERZ_LEADERBOARD_KEY, rows);
+    return rows;
+  } catch {
+    return readClickLeaderboard();
+  }
+}
+
+export async function saveClickLeaderboardEntry(name, score) {
+  const trimmedName = name.trim().slice(0, 24) || "Anonymous Clicker";
+  const safeScore = Math.max(0, Math.round(Number(score) || 0));
+  const res = await fetch(CLICKERZ_LEADERBOARD_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: trimmedName,
+      score: safeScore,
+    }),
+  });
+
+  if (!res.ok) throw new Error("Could not save score to shared leaderboard.");
+
+  const payload = await res.json();
+  const nextRows = normalizeLeaderboardRows(payload?.rows);
   writeJson(CLICKERZ_LEADERBOARD_KEY, nextRows);
   return nextRows;
 }
