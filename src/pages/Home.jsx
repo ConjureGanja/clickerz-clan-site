@@ -361,9 +361,9 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
         }
 
         if (priorityA === 0) {
-          const timestampA = getCompetitionTimestamp(a.endsAt, Infinity);
-          const timestampB = getCompetitionTimestamp(b.endsAt, Infinity);
-          return timestampA - timestampB;
+          const endTimestampA = getCompetitionTimestamp(a.endsAt, Infinity);
+          const endTimestampB = getCompetitionTimestamp(b.endsAt, Infinity);
+          return endTimestampA - endTimestampB;
         }
 
         const timestampA = getCompetitionTimestamp(a.startsAt, Infinity);
