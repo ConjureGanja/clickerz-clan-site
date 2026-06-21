@@ -49,13 +49,10 @@ export function fetchCompetitionWinners(competition) {
     `wom:competition:${competition.id}`,
     WINNERS_TTL,
     async () => {
-      try {
-        const res = await fetch(`${WOM_BASE}/competitions/${competition.id}`);
-        const detail = await res.json();
-        return { comp: competition, participations: detail.participations ?? [] };
-      } catch {
-        return { comp: competition, participations: [] };
-      }
+      const res = await fetch(`${WOM_BASE}/competitions/${competition.id}`);
+      if (!res.ok) throw new Error(`WOM competition ${competition.id} ${res.status}`);
+      const detail = await res.json();
+      return { comp: competition, participations: detail.participations ?? [] };
     },
-  );
+  ).catch(() => ({ comp: competition, participations: [] }));
 }

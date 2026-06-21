@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatGained, fetchCompetitionWinners, fetchGroupCompetitions } from "../utils/wom";
 import { cachedFetch } from "../utils/apiCache";
+import SectionBadge from "../components/SectionBadge";
 
 const TTL_DISCORD = 60 * 1000;
 const TTL_WOM_STATS = 5 * 60 * 1000;
-import SectionBadge from "../components/SectionBadge";
 
 const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
