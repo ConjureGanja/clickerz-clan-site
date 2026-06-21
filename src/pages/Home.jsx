@@ -360,6 +360,12 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
           return timestampB - timestampA;
         }
 
+        if (priorityA === 0) {
+          const endTimestampA = getCompetitionTimestamp(a.endsAt, Infinity);
+          const endTimestampB = getCompetitionTimestamp(b.endsAt, Infinity);
+          return endTimestampA - endTimestampB;
+        }
+
         const timestampA = getCompetitionTimestamp(a.startsAt, Infinity);
         const timestampB = getCompetitionTimestamp(b.startsAt, Infinity);
 
