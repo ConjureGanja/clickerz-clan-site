@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { CLICKERZ_AUDIO_SRC } from "./clickingGame";
 
 class AudioManager {
@@ -11,6 +11,7 @@ class AudioManager {
     this._message = "Press Play to start the game music.";
     this._unlock = null;
     this._listeners = new Set();
+    this._version = 0;
   }
 
   _init() {
@@ -155,12 +156,15 @@ class AudioManager {
     this._unlock = null;
   }
 
-  subscribe(fn) {
+  subscribe = (fn) => {
     this._listeners.add(fn);
     return () => this._listeners.delete(fn);
-  }
+  };
+
+  getSnapshot = () => this._version;
 
   _notify() {
+    this._version += 1;
     this._listeners.forEach((fn) => fn());
   }
 
@@ -174,7 +178,6 @@ class AudioManager {
 export const audioManager = new AudioManager();
 
 export function useAudioManager() {
-  const [, rerender] = useState(0);
-  useEffect(() => audioManager.subscribe(() => rerender((n) => n + 1)), []);
+  useSyncExternalStore(audioManager.subscribe, audioManager.getSnapshot, audioManager.getSnapshot);
   return audioManager;
 }

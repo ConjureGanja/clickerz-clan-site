@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import { formatGained, fetchCompetitionWinners } from "../utils/wom";
+import { formatGained, fetchCompetitionWinners, fetchGroupCompetitions } from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
-
-const WOM_GROUP_ID = 21596;
-const WOM_BASE = "https://api.wiseoldman.net/v2";
 
 const WOM_SKILLS = new Set([
   "overall", "attack", "defence", "strength", "hitpoints", "ranged",
@@ -81,8 +78,7 @@ export default function Events() {
   const [botwWinners, setBotwWinners] = useState(null);
 
   useEffect(() => {
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/competitions?limit=20`)
-      .then((r) => r.json())
+    fetchGroupCompetitions()
       .then((data) => {
         setComps(data);
         setLoading(false);

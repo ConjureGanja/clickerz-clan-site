@@ -32,8 +32,10 @@ function writeJson(key, value) {
   window.localStorage.setItem(key, JSON.stringify(value));
 }
 
+const clickCountFormatter = new Intl.NumberFormat("en-US");
+
 export function formatClickCount(value) {
-  return new Intl.NumberFormat("en-US").format(value ?? 0);
+  return clickCountFormatter.format(value ?? 0);
 }
 
 export function readClickScore() {

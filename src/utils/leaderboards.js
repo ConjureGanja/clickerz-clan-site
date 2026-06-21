@@ -1,8 +1,13 @@
+import { cachedFetch } from "./apiCache";
+
 export const WOM_GROUP_ID = 21596;
 export const WOM_BASE = "https://api.wiseoldman.net/v2";
 export const RUNEPROFILE_BASE = "https://api.runeprofile.com/v1";
 export const RUNEPROFILE_CLAN_NAME = "Clickerz";
 export const RUNEPROFILE_SITE = "https://runeprofile.com";
+
+const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+const GROUP_MEMBERS_SPOTLIGHT_LIMIT = 15;
 
 const DEFAULT_ACTIVITY_TYPES = [
   "valuable_drop",
@@ -188,7 +193,8 @@ function getGroupMemberNames(groupInfo) {
 
   return memberships
     .map((membership) => getDisplayName(membership.player) ?? getDisplayName(membership))
-    .filter(Boolean);
+    .filter(Boolean)
+    .slice(0, GROUP_MEMBERS_SPOTLIGHT_LIMIT);
 }
 
 function buildSpotlight(summary) {
@@ -239,24 +245,26 @@ async function fetchRuneProfileSummaries(usernames) {
     const batchResults = await Promise.allSettled(
       batch.map((username) => {
         const cacheKey = username.toLowerCase();
-        const cachedSummary = runeProfileSummaryCache.get(cacheKey);
+        const cachedPromise = runeProfileSummaryCache.get(cacheKey);
 
-        if (cachedSummary) {
-          return cachedSummary;
+        if (cachedPromise) {
+          return cachedPromise;
         }
 
-        const summaryRequest = fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`)
-          .then((summary) => {
-            if (
-              runeProfileSummaryCache.size >= RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE &&
-              !runeProfileSummaryCache.has(cacheKey)
-            ) {
-              const oldestKey = runeProfileSummaryCache.keys().next().value;
-              runeProfileSummaryCache.delete(oldestKey);
-            }
-            runeProfileSummaryCache.set(cacheKey, summary);
-            return summary;
-          });
+        if (runeProfileSummaryCache.size >= RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE) {
+          const oldestKey = runeProfileSummaryCache.keys().next().value;
+          runeProfileSummaryCache.delete(oldestKey);
+        }
+
+        const summaryRequest = fetchJson(
+          `${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`,
+        ).catch((error) => {
+          if (runeProfileSummaryCache.get(cacheKey) === summaryRequest) {
+            runeProfileSummaryCache.delete(cacheKey);
+          }
+          throw error;
+        });
+        runeProfileSummaryCache.set(cacheKey, summaryRequest);
         return summaryRequest;
       }),
     );
@@ -279,7 +287,11 @@ async function fetchRuneProfileClanActivities(limit = 12) {
   return Array.isArray(data.activities) ? data.activities : [];
 }
 
-export async function fetchLeaderboardSnapshot() {
+export function fetchLeaderboardSnapshot() {
+  return cachedFetch("leaderboards:snapshot", SNAPSHOT_TTL_MS, _fetchLeaderboardSnapshot);
+}
+
+async function _fetchLeaderboardSnapshot() {
   const womRequests = await Promise.allSettled([
     fetchJson(`${WOM_BASE}/groups/${WOM_GROUP_ID}`),
     fetchJson(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=15`),

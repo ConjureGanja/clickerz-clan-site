@@ -51,11 +51,33 @@ export default function ClickingGame() {
   const topScore = useMemo(() => leaderboard[0]?.score ?? 0, [leaderboard]);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setFloaters((current) => [...current.slice(-11), createFloatingEmoji()]);
-    }, 1050);
+    let intervalId = null;
 
-    return () => window.clearInterval(intervalId);
+    const start = () => {
+      if (intervalId !== null) return;
+      intervalId = window.setInterval(() => {
+        setFloaters((current) => [...current.slice(-11), createFloatingEmoji()]);
+      }, 1050);
+    };
+
+    const stop = () => {
+      if (intervalId === null) return;
+      window.clearInterval(intervalId);
+      intervalId = null;
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   const handleFloaterClick = (floater) => {
