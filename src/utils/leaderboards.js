@@ -1,4 +1,6 @@
-import { cachedFetch } from "./apiCache";
+import { cachedFetch, invalidateCache } from "./apiCache";
+
+const SNAPSHOT_CACHE_KEY = "leaderboards:snapshot";
 
 export const WOM_GROUP_ID = 21596;
 export const WOM_BASE = "https://api.wiseoldman.net/v2";
@@ -288,7 +290,14 @@ async function fetchRuneProfileClanActivities(limit = 12) {
 }
 
 export function fetchLeaderboardSnapshot() {
-  return cachedFetch("leaderboards:snapshot", SNAPSHOT_TTL_MS, _fetchLeaderboardSnapshot);
+  return cachedFetch(SNAPSHOT_CACHE_KEY, SNAPSHOT_TTL_MS, _fetchLeaderboardSnapshot).then(
+    (snapshot) => {
+      if (snapshot?.errors?.wom || snapshot?.errors?.runeProfile) {
+        invalidateCache(SNAPSHOT_CACHE_KEY);
+      }
+      return snapshot;
+    },
+  );
 }
 
 async function _fetchLeaderboardSnapshot() {
