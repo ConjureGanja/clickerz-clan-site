@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 export const CLICKERZ_SCORE_KEY = "clickerz-clicking-game-score";
 export const CLICKERZ_LEADERBOARD_KEY = "clickerz-clicking-game-leaderboard";
 export const CLICKERZ_SCORE_EVENT = "clickerz-clicking-game-score-change";
-export const CLICKERZ_AUDIO_SRC = "/audio/clickerz-clicking-game.mp3";
 export const CLICKERZ_LEADERBOARD_ENDPOINT = "/api/clicking-leaderboard";
 
 const MAX_LEADERBOARD_ENTRIES = 25;
