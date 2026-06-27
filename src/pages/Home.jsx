@@ -754,7 +754,7 @@ export default function Home() {
       const bosses = bossesResult.status === "fulfilled" ? bossesResult.value.map((entry, i) => ({
         rank: i + 1,
         name: entry.player.displayName,
-        value: `${Math.round(entry.data.value).toLocaleString()} EHB`,
+        value: `${Math.round(entry.data.value ?? 0).toLocaleString()} EHB`,
       })) : [];
       setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
     });

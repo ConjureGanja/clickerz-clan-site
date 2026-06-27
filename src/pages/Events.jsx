@@ -69,13 +69,16 @@ function formatMetricName(metric = "") {
 
 function formatCompDate(isoString) {
   if (!isoString) return null;
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return null;
 
-  return new Date(isoString).toLocaleString("en-US", {
+  return date.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZoneName: "short",
     hour12: true,
   });
 }
@@ -233,7 +236,7 @@ export default function Events() {
         icon: "🐉",
         toneClass: "event-card--gold",
         title: botwComp.title || `BOTW — ${formatMetricName(botwComp.metric)}`,
-        subtitle: `${botwComp.participantCount} participants competing for the highest ${formatMetricName(botwComp.metric)} count this week.`,
+        subtitle: `${botwComp.participantCount} participants competing for the highest ${formatMetricName(botwComp.metric)} kill count this week.`,
         startDate: formatCompDate(botwComp.startsAt),
         endDate: formatCompDate(botwComp.endsAt),
         prize: WEEKLY_EVENTS.botw.prize,
