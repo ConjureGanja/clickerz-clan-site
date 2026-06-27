@@ -17,7 +17,7 @@ const WEEKLY_EVENTS = {
     startDate: "Mondays · 8:00 PM EST",
     endDate: "Next Monday · 7:59 PM EST",
     prize: "5M GP to 1st place",
-    notes: "Track your gains all week. Verify your RSN in Discord before reset.",
+    notes: "Track your gains all week via Wise Old Man.",
     ctaLabel: "View SOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
