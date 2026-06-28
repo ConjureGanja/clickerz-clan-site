@@ -10,7 +10,6 @@ import Stats from "./pages/Stats";
 import Leaderboards from "./pages/Leaderboards";
 import ClickingGame from "./pages/ClickingGame";
 import ClickingGameWidget from "./components/ClickingGameWidget";
-import { audioManager } from "./utils/audioManager";
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -30,18 +29,9 @@ function ScrollToTop() {
   return null;
 }
 
-function ClickingGameAudioAutoplay() {
-  useEffect(() => {
-    audioManager.tryAutoplay();
-  }, []);
-
-  return null;
-}
-
 export default function App() {
   return (
     <Router>
-      <ClickingGameAudioAutoplay />
       <div className="app-shell">
         <ScrollToTop />
         <NavBar />

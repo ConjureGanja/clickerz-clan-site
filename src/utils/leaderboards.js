@@ -1,8 +1,15 @@
+import { cachedFetch, invalidateCache } from "./apiCache";
+
+const SNAPSHOT_CACHE_KEY = "leaderboards:snapshot";
+
 export const WOM_GROUP_ID = 21596;
 export const WOM_BASE = "https://api.wiseoldman.net/v2";
 export const RUNEPROFILE_BASE = "https://api.runeprofile.com/v1";
 export const RUNEPROFILE_CLAN_NAME = "Clickerz";
 export const RUNEPROFILE_SITE = "https://runeprofile.com";
+
+const SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+const GROUP_MEMBERS_SPOTLIGHT_LIMIT = 15;
 
 const DEFAULT_ACTIVITY_TYPES = [
   "valuable_drop",
@@ -188,7 +195,8 @@ function getGroupMemberNames(groupInfo) {
 
   return memberships
     .map((membership) => getDisplayName(membership.player) ?? getDisplayName(membership))
-    .filter(Boolean);
+    .filter(Boolean)
+    .slice(0, GROUP_MEMBERS_SPOTLIGHT_LIMIT);
 }
 
 function buildSpotlight(summary) {
@@ -232,7 +240,7 @@ async function fetchRuneProfileSummaries(usernames) {
     .slice(0, RUNEPROFILE_SUMMARY_MAX_REQUESTS);
 
   if (uniqueNames.length === 0) {
-    return [];
+    return { spotlights: [], partial: false };
   }
 
   const results = [];
@@ -242,24 +250,26 @@ async function fetchRuneProfileSummaries(usernames) {
     const batchResults = await Promise.allSettled(
       batch.map((username) => {
         const cacheKey = username.toLowerCase();
-        const cachedSummary = runeProfileSummaryCache.get(cacheKey);
+        const cachedPromise = runeProfileSummaryCache.get(cacheKey);
 
-        if (cachedSummary) {
-          return cachedSummary;
+        if (cachedPromise) {
+          return cachedPromise;
         }
 
-        const summaryRequest = fetchJson(`${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`)
-          .then((summary) => {
-            if (
-              runeProfileSummaryCache.size >= RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE &&
-              !runeProfileSummaryCache.has(cacheKey)
-            ) {
-              const oldestKey = runeProfileSummaryCache.keys().next().value;
-              runeProfileSummaryCache.delete(oldestKey);
-            }
-            runeProfileSummaryCache.set(cacheKey, summary);
-            return summary;
-          });
+        if (runeProfileSummaryCache.size >= RUNEPROFILE_SUMMARY_CACHE_MAX_SIZE) {
+          const oldestKey = runeProfileSummaryCache.keys().next().value;
+          runeProfileSummaryCache.delete(oldestKey);
+        }
+
+        const summaryRequest = fetchJson(
+          `${RUNEPROFILE_BASE}/accounts/${encodeURIComponent(username)}`,
+        ).catch((error) => {
+          if (runeProfileSummaryCache.get(cacheKey) === summaryRequest) {
+            runeProfileSummaryCache.delete(cacheKey);
+          }
+          throw error;
+        });
+        runeProfileSummaryCache.set(cacheKey, summaryRequest);
         return summaryRequest;
       }),
     );
@@ -267,9 +277,12 @@ async function fetchRuneProfileSummaries(usernames) {
     results.push(...batchResults);
   }
 
-  return results
-    .filter((result) => result.status === "fulfilled")
-    .map((result) => buildSpotlight(result.value));
+  return {
+    spotlights: results
+      .filter((result) => result.status === "fulfilled")
+      .map((result) => buildSpotlight(result.value)),
+    partial: results.some((result) => result.status === "rejected"),
+  };
 }
 
 async function fetchRuneProfileClanActivities(limit = 12) {
@@ -282,7 +295,22 @@ async function fetchRuneProfileClanActivities(limit = 12) {
   return Array.isArray(data.activities) ? data.activities : [];
 }
 
-export async function fetchLeaderboardSnapshot() {
+export function fetchLeaderboardSnapshot() {
+  return cachedFetch(SNAPSHOT_CACHE_KEY, SNAPSHOT_TTL_MS, _fetchLeaderboardSnapshot).then(
+    (snapshot) => {
+      if (
+        snapshot?.errors?.wom ||
+        snapshot?.errors?.runeProfile ||
+        snapshot?.errors?.partial
+      ) {
+        invalidateCache(SNAPSHOT_CACHE_KEY);
+      }
+      return snapshot;
+    },
+  );
+}
+
+async function _fetchLeaderboardSnapshot() {
   const womRequests = await Promise.allSettled([
     fetchJson(`${WOM_BASE}/groups/${WOM_GROUP_ID}`),
     fetchJson(`${WOM_BASE}/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=15`),
@@ -381,7 +409,10 @@ export async function fetchLeaderboardSnapshot() {
   ]);
 
   const clanActivities = activitiesResult.status === "fulfilled" ? activitiesResult.value : [];
-  const spotlights = spotlightResult.status === "fulfilled" ? spotlightResult.value : [];
+  const spotlightPayload =
+    spotlightResult.status === "fulfilled" ? spotlightResult.value : { spotlights: [], partial: true };
+  const spotlights = spotlightPayload.spotlights;
+  const spotlightHadPartialFailure = spotlightPayload.partial;
 
   const biggestDrop = clanActivities
     .filter((activity) => activity.type === "valuable_drop")
@@ -407,6 +438,11 @@ export async function fetchLeaderboardSnapshot() {
       runeProfile:
         activitiesResult.status === "rejected" &&
         (spotlightResult.status === "rejected" || spotlights.length === 0),
+      partial:
+        womRequests.some((result) => result.status === "rejected") ||
+        activitiesResult.status === "rejected" ||
+        spotlightResult.status === "rejected" ||
+        spotlightHadPartialFailure,
     },
   };
 }

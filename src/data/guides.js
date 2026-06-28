@@ -12,9 +12,9 @@ export const GUIDES = [
     content: [
       "Welcome to Clickerz — one of OSRS's friendliest clans. If you've just joined or are thinking about it, this guide covers everything you need to get settled in.",
       "The first thing you'll want to do is join our Discord server. This is where all announcements, events, and giveaways happen. Without Discord, you'll miss out on weekly event updates and first-place prize announcements. Use the invite link in the website header or ask any clan member in-game.",
-      "Once you're in Discord, head to the #verify-rsn channel and drop your RuneScape username. This links your account to our Wise Old Man group so your gains count toward SOTW and BOTW competitions. Your RSN must match exactly what appears on the OSRS hiscores.",
+      "Once you're in Discord, drop your RuneScape username in chat so a mod can add you to our Wise Old Man group. This links your account so your gains count toward SOTW and BOTW competitions. Your RSN must match exactly what appears on the OSRS hiscores.",
       "Clan ranks are earned through activity and community involvement. Starting as a Recruit, you can rise to Regular, Corporal, Sergeant, and beyond. There are no strict requirements beyond being present and friendly. Show up, help out, and the ranks follow.",
-      "SOTW (Skill of the Week) and BOTW (Boss of the Week) run every Monday from 8 PM EST to the following Monday at 8 PM EST. Participation is automatic once your RSN is verified on Wise Old Man. Each weekly event pays 5M GP to 1st place, and winners are posted in Discord.",
+      "SOTW (Skill of the Week) and BOTW (Boss of the Week) run every Monday from 8 PM EST to the following Monday at 8 PM EST. Participation is automatic once you've been added to the Clickerz Wise Old Man group. Each weekly event pays 5M GP to 1st place, and winners are posted in Discord.",
       "The clan chat in-game is 'Clickerz' — type /clan in the chatbox to find us. Feel free to ask for help, share drops, or just hang out. We're a friendly bunch and we genuinely want to see you succeed.",
     ],
   },
@@ -69,7 +69,7 @@ export const GUIDES = [
     content: [
       "Wise Old Man (WOM) is the third-party tracking tool we use to run all our SOTW and BOTW competitions. Getting your account set up correctly is essential so your gains count during events.",
       "Step 1: Go to wiseoldman.net and search for your RSN. If your account already exists, update it by clicking 'Update Player'. If it doesn't exist, click 'Track Player'. WOM fetches your stats from the official OSRS Hiscores each time you manually update.",
-      "Step 2: Post your exact RSN in the #verify-rsn channel in our Discord. A mod will manually add you to the Clickerz WOM group (Group ID: 21596). You can verify you've been added by visiting wiseoldman.net/groups/21596 and searching for your name.",
+      "Step 2: Post your exact RSN in Discord and ask a mod to add you to the Clickerz WOM group (Group ID: 21596). You can confirm you've been added by visiting wiseoldman.net/groups/21596 and searching for your name.",
       "Important caveat: WOM can only track your account if it appears on the OSRS Hiscores, which requires at least 1 XP in a skill. Accounts that are very new may not appear. Update your player on WOM.net first to confirm it's tracking you.",
       "Competition tracking is fully automatic once you're in the group. When a new competition starts, WOM records your starting XP or kill count as a snapshot. When the competition ends, it calculates how much you gained. You don't need to do anything special during the week — just play normally.",
       "If your stats aren't updating mid-competition, try visiting wiseoldman.net and manually updating your player. There can be a short sync delay, but your gains are captured within a few minutes of an update. If you're still having issues, ask for help in the #wom-help channel in Discord.",

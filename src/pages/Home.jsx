@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { formatGained, fetchCompetitionWinners } from "../utils/wom";
+import { formatGained, fetchCompetitionWinners, fetchGroupCompetitions } from "../utils/wom";
+import { cachedFetch } from "../utils/apiCache";
 import SectionBadge from "../components/SectionBadge";
+
+const TTL_DISCORD = 60 * 1000;
+const TTL_WOM_STATS = 5 * 60 * 1000;
+
+async function fetchJsonOk(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url} ${res.status}`);
+  return res.json();
+}
 
 const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
@@ -709,22 +719,32 @@ export default function Home() {
 
   // Discord widget
   useEffect(() => {
-    fetch(`https://discord.com/api/guilds/${DISCORD_GUILD_ID}/widget.json`)
-      .then((r) => r.json())
+    cachedFetch(`discord:widget:${DISCORD_GUILD_ID}`, TTL_DISCORD, () =>
+      fetchJsonOk(`https://discord.com/api/guilds/${DISCORD_GUILD_ID}/widget.json`),
+    )
       .then((d) => setDiscordOnline(d.presence_count))
       .catch(() => {});
   }, []);
 
   // WOM stats
   useEffect(() => {
-    fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`)
-      .then((r) => r.json())
+    cachedFetch(`wom:group:${WOM_GROUP_ID}`, TTL_WOM_STATS, () =>
+      fetchJsonOk(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`),
+    )
       .then((g) => setWomMemberCount(g.memberCount))
       .catch(() => {});
 
     Promise.allSettled([
-      fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=10`).then(r => r.json()),
-      fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=10`).then(r => r.json())
+      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall:10`, TTL_WOM_STATS, () =>
+        fetchJsonOk(
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=10`,
+        ),
+      ),
+      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb:10`, TTL_WOM_STATS, () =>
+        fetchJsonOk(
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=10`,
+        ),
+      ),
     ]).then(([skillsResult, bossesResult]) => {
       const skills = skillsResult.status === "fulfilled" ? skillsResult.value.map((entry, i) => ({
         rank: i + 1,
@@ -739,8 +759,7 @@ export default function Home() {
       setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
     });
 
-    fetch(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/competitions?limit=20`)
-      .then(r => r.json())
+    fetchGroupCompetitions()
       .then(comps => {
         if (!Array.isArray(comps)) return;
         setWomComps(comps);

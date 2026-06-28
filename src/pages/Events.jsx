@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { formatGained, fetchCompetitionWinners } from "../utils/wom";
+import { formatGained, fetchCompetitionWinners, fetchGroupCompetitions } from "../utils/wom";
 import SectionBadge from "../components/SectionBadge";
 
 const WOM_GROUP_ID = 21596;
-const WOM_BASE = "https://api.wiseoldman.net/v2";
 
 const SITE_LINKS = {
   discord: "https://discord.gg/cju3DSSdju",
@@ -18,7 +17,7 @@ const WEEKLY_EVENTS = {
     startDate: "Mondays · 8:00 PM EST",
     endDate: "Next Monday · 7:59 PM EST",
     prize: "5M GP to 1st place",
-    notes: "Track your gains all week. Verify your RSN in Discord before reset.",
+    notes: "Track your gains all week via Wise Old Man.",
     ctaLabel: "View SOTW Details",
     ctaHref: SITE_LINKS.discord,
   },
@@ -141,8 +140,7 @@ export default function Events() {
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`${WOM_BASE}/groups/${WOM_GROUP_ID}/competitions?limit=20`)
-      .then((r) => r.json())
+    fetchGroupCompetitions()
       .then((data) => {
         if (cancelled) return;
 

@@ -6,7 +6,11 @@ import {
   saveClickLeaderboardEntry,
   useClickerzScore,
 } from "../utils/clickingGame";
-import { useAudioManager } from "../utils/audioManager";
+
+const SOUNDCLOUD_PROFILE_URL = "https://soundcloud.com/clickerz-cc";
+const SOUNDCLOUD_EMBED_SRC = `https://w.soundcloud.com/player/?url=${encodeURIComponent(
+  SOUNDCLOUD_PROFILE_URL,
+)}&color=%23ffd700&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false`;
 
 const FLOATING_EMOJIS = [
   { emoji: "🌿", value: 10 },
@@ -41,7 +45,6 @@ function formatLeaderboardDate(value) {
 
 export default function ClickingGame() {
   const { score, addScore } = useClickerzScore();
-  const audio = useAudioManager();
   const [floaters, setFloaters] = useState(() => Array.from({ length: 7 }, createFloatingEmoji));
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
@@ -52,11 +55,33 @@ export default function ClickingGame() {
   const topScore = useMemo(() => leaderboard[0]?.score ?? 0, [leaderboard]);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setFloaters((current) => [...current.slice(-11), createFloatingEmoji()]);
-    }, 1050);
+    let intervalId = null;
 
-    return () => window.clearInterval(intervalId);
+    const start = () => {
+      if (intervalId !== null) return;
+      intervalId = window.setInterval(() => {
+        setFloaters((current) => [...current.slice(-11), createFloatingEmoji()]);
+      }, 1050);
+    };
+
+    const stop = () => {
+      if (intervalId === null) return;
+      window.clearInterval(intervalId);
+      intervalId = null;
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    if (!document.hidden) start();
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   useEffect(() => {
@@ -136,20 +161,26 @@ export default function ClickingGame() {
 
           <div className="clicking-side-panel">
             <div className="clicking-panel-card">
-              <h2>Game Music</h2>
-              <p>{audio.message}</p>
-              <div className="clicking-music-controls">
-                <button type="button" className="button button--primary" data-audio-toggle onClick={() => audio.toggle()}>
-                  {audio.isPlaying ? "⏸ Pause" : "▶ Play"}
-                </button>
-                <button type="button" className="button button--secondary" onClick={() => audio.adjustVolume(-0.1)}>
-                  Volume −
-                </button>
-                <button type="button" className="button button--secondary" onClick={() => audio.adjustVolume(0.1)}>
-                  Volume +
-                </button>
-              </div>
-              <div className="clicking-volume">Volume: {Math.round(audio.volume * 100)}%</div>
+              <h2>Clan Tracks</h2>
+              <p>Vibe out to tracks from the Clickerz SoundCloud while you click.</p>
+              <iframe
+                title="Clickerz SoundCloud player"
+                className="clicking-soundcloud"
+                width="100%"
+                height="300"
+                scrolling="no"
+                frameBorder="no"
+                allow="autoplay"
+                src={SOUNDCLOUD_EMBED_SRC}
+              />
+              <a
+                className="button button--secondary"
+                href={SOUNDCLOUD_PROFILE_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open on SoundCloud
+              </a>
             </div>
 
             <form className="clicking-panel-card" onSubmit={handleSubmitScore}>
