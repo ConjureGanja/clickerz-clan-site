@@ -513,10 +513,15 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
   );
 }
 
+const TOP_N = 10;
+
 function LeaderboardSection({ leaderboard }) {
   const [activeTab, setActiveTab] = useState("skills");
+  const [showAll, setShowAll] = useState(false);
   const { data, loading, error } = leaderboard;
-  const entries = activeTab === "skills" ? data.skills : data.bosses;
+  const allEntries = activeTab === "skills" ? data.skills : data.bosses;
+  const entries = showAll ? allEntries : allEntries.slice(0, TOP_N);
+  const canToggle = allEntries.length > TOP_N;
 
   const rankIcon = (rank) => {
     if (rank === 1) return "🥇";
@@ -537,14 +542,14 @@ function LeaderboardSection({ leaderboard }) {
         <div className="tab-switcher">
           <button
             type="button"
-            onClick={() => setActiveTab("skills")}
+            onClick={() => { setActiveTab("skills"); setShowAll(false); }}
             className={activeTab === "skills" ? "tab-button tab-button--active" : "tab-button"}
           >
             ⚔️ Total Level
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("bosses")}
+            onClick={() => { setActiveTab("bosses"); setShowAll(false); }}
             className={activeTab === "bosses" ? "tab-button tab-button--active" : "tab-button"}
           >
             🐉 Boss EHB
@@ -577,6 +582,18 @@ function LeaderboardSection({ leaderboard }) {
             ))
           )}
         </div>
+
+        {canToggle && (
+          <div style={{ textAlign: "center", marginTop: "1rem" }}>
+            <button
+              type="button"
+              className="button button--secondary"
+              onClick={() => setShowAll((prev) => !prev)}
+            >
+              {showAll ? "Show less" : "Show all"}
+            </button>
+          </div>
+        )}
 
         <p className="leaderboard-note">
           {error ? (
@@ -735,14 +752,14 @@ export default function Home() {
       .catch(() => {});
 
     Promise.allSettled([
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall:10`, TTL_WOM_STATS, () =>
+      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall`, TTL_WOM_STATS, () =>
         fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=10`,
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall`,
         ),
       ),
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb:10`, TTL_WOM_STATS, () =>
+      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb`, TTL_WOM_STATS, () =>
         fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=10`,
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb`,
         ),
       ),
     ]).then(([skillsResult, bossesResult]) => {
