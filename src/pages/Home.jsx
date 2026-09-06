@@ -756,7 +756,22 @@ export default function Home() {
         ),
     );
 
+    const loadAllHiscoresPages = async (metric, offset = 0, pages = []) => {
+      const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset);
+      const nextPages = [...pages, ...page];
+
+      if (page.length < WOM_HISCORES_PAGE_SIZE) {
+        return nextPages;
+      }
+
+      return loadAllHiscoresPages(metric, offset + WOM_HISCORES_PAGE_SIZE, nextPages);
+    };
+
     const loadLeaderboardMetric = (metric, memberCount) => {
+      if (memberCount == null) {
+        return loadAllHiscoresPages(metric);
+      }
+
       const entryCount = Math.max(memberCount ?? 0, TOP_N);
       if (entryCount <= TOP_N) {
         return loadHiscoresPage(metric, TOP_N);
@@ -796,7 +811,7 @@ export default function Home() {
         setWomMemberCount(g.memberCount);
         return loadLeaderboard(g.memberCount);
       })
-      .catch(() => loadLeaderboard(TOP_N));
+      .catch(() => loadLeaderboard());
 
     fetchGroupCompetitions()
       .then(comps => {
