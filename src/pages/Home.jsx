@@ -761,7 +761,17 @@ export default function Home() {
       let offset = 0;
 
       while (true) {
-        const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset);
+        const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset).catch((error) => {
+          if (pages.length > 0) {
+            return [];
+          }
+          throw error;
+        });
+
+        if (page.length === 0) {
+          return pages;
+        }
+
         pages.push(...page);
 
         if (page.length < WOM_HISCORES_PAGE_SIZE) {
