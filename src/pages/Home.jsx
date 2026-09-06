@@ -514,6 +514,7 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
 }
 
 const TOP_N = 10;
+const WOM_HISCORES_PAGE_SIZE = 100;
 
 function LeaderboardSection({ leaderboard }) {
   const [activeTab, setActiveTab] = useState("skills");
@@ -746,17 +747,34 @@ export default function Home() {
 
   // WOM stats
   useEffect(() => {
-    const loadLeaderboard = (memberLimit) => Promise.allSettled([
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall:${memberLimit}`, TTL_WOM_STATS, () =>
+    const loadHiscoresPage = (metric, limit, offset = 0) => cachedFetch(
+      `wom:hiscores:${WOM_GROUP_ID}:${metric}:${limit}:${offset}`,
+      TTL_WOM_STATS,
+      () =>
         fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=${memberLimit}`,
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=${metric}&limit=${limit}&offset=${offset}`,
         ),
-      ),
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb:${memberLimit}`, TTL_WOM_STATS, () =>
-        fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=${memberLimit}`,
-        ),
-      ),
+    );
+
+    const loadLeaderboardMetric = (metric, memberCount) => {
+      const entryCount = Math.max(memberCount ?? 0, TOP_N);
+      if (entryCount <= TOP_N) {
+        return loadHiscoresPage(metric, TOP_N);
+      }
+
+      const pageOffsets = Array.from(
+        { length: Math.ceil(entryCount / WOM_HISCORES_PAGE_SIZE) },
+        (_, pageIndex) => pageIndex * WOM_HISCORES_PAGE_SIZE,
+      );
+
+      return Promise.all(
+        pageOffsets.map((offset) => loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset)),
+      ).then((pages) => pages.flat());
+    };
+
+    const loadLeaderboard = (memberCount) => Promise.allSettled([
+      loadLeaderboardMetric("overall", memberCount),
+      loadLeaderboardMetric("ehb", memberCount),
     ]).then(([skillsResult, bossesResult]) => {
       const skills = skillsResult.status === "fulfilled" ? skillsResult.value.map((entry, i) => ({
         rank: i + 1,
@@ -776,7 +794,7 @@ export default function Home() {
     )
       .then((g) => {
         setWomMemberCount(g.memberCount);
-        return loadLeaderboard(Math.max(g.memberCount ?? 0, TOP_N));
+        return loadLeaderboard(g.memberCount);
       })
       .catch(() => loadLeaderboard(TOP_N));
 
