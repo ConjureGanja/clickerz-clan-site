@@ -776,6 +776,9 @@ export default function Home() {
       if (entryCount <= TOP_N) {
         return loadHiscoresPage(metric, TOP_N);
       }
+      if (entryCount <= WOM_HISCORES_PAGE_SIZE) {
+        return loadHiscoresPage(metric, entryCount);
+      }
 
       const pageOffsets = Array.from(
         { length: Math.ceil(entryCount / WOM_HISCORES_PAGE_SIZE) },
