@@ -588,6 +588,7 @@ function LeaderboardSection({ leaderboard }) {
             <button
               type="button"
               className="button button--secondary"
+              aria-expanded={showAll}
               onClick={() => setShowAll((prev) => !prev)}
             >
               {showAll ? "Show less" : "Show all"}
@@ -745,21 +746,15 @@ export default function Home() {
 
   // WOM stats
   useEffect(() => {
-    cachedFetch(`wom:group:${WOM_GROUP_ID}`, TTL_WOM_STATS, () =>
-      fetchJsonOk(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`),
-    )
-      .then((g) => setWomMemberCount(g.memberCount))
-      .catch(() => {});
-
-    Promise.allSettled([
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall`, TTL_WOM_STATS, () =>
+    const loadLeaderboard = (memberLimit) => Promise.allSettled([
+      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall:${memberLimit}`, TTL_WOM_STATS, () =>
         fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall`,
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=${memberLimit}`,
         ),
       ),
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb`, TTL_WOM_STATS, () =>
+      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb:${memberLimit}`, TTL_WOM_STATS, () =>
         fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb`,
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=${memberLimit}`,
         ),
       ),
     ]).then(([skillsResult, bossesResult]) => {
@@ -775,6 +770,15 @@ export default function Home() {
       })) : [];
       setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
     });
+
+    cachedFetch(`wom:group:${WOM_GROUP_ID}`, TTL_WOM_STATS, () =>
+      fetchJsonOk(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`),
+    )
+      .then((g) => {
+        setWomMemberCount(g.memberCount);
+        return loadLeaderboard(Math.max(g.memberCount ?? 0, TOP_N));
+      })
+      .catch(() => loadLeaderboard(TOP_N));
 
     fetchGroupCompetitions()
       .then(comps => {
