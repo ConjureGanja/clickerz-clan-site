@@ -756,15 +756,20 @@ export default function Home() {
         ),
     );
 
-    const loadAllHiscoresPages = async (metric, offset = 0, pages = []) => {
-      const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset);
-      const nextPages = [...pages, ...page];
+    const loadAllHiscoresPages = async (metric) => {
+      const pages = [];
+      let offset = 0;
 
-      if (page.length < WOM_HISCORES_PAGE_SIZE) {
-        return nextPages;
+      while (true) {
+        const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset);
+        pages.push(...page);
+
+        if (page.length < WOM_HISCORES_PAGE_SIZE) {
+          return pages;
+        }
+
+        offset += WOM_HISCORES_PAGE_SIZE;
       }
-
-      return loadAllHiscoresPages(metric, offset + WOM_HISCORES_PAGE_SIZE, nextPages);
     };
 
     const loadLeaderboardMetric = (metric, memberCount) => {
