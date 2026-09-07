@@ -524,7 +524,7 @@ export default function Leaderboards() {
             Sync on WOM, keep RuneProfile updated, and give the clan something worth checking in on.
           </p>
           <div style={{ marginTop: "2rem", display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
-            <a href="https://discord.gg/cju3DSSdju" target="_blank" rel="noreferrer" className="button button--primary">
+            <a href="https://discord.gg/4hkMf6kvsS" target="_blank" rel="noreferrer" className="button button--primary">
               🎮 Join the Clan
             </a>
             <Link to="/events" className="button button--secondary">

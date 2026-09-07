@@ -100,7 +100,7 @@ export default function Guides() {
             We&apos;re always looking for helpful members to share their knowledge. Reach out to a moderator on Discord to get your guide featured!
           </p>
           <div style={{ marginTop: "2rem" }}>
-            <a href="https://discord.gg/cju3DSSdju" target="_blank" rel="noreferrer" className="button button--secondary">
+            <a href="https://discord.gg/4hkMf6kvsS" target="_blank" rel="noreferrer" className="button button--secondary">
               Contact us on Discord
             </a>
           </div>

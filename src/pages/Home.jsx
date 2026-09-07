@@ -17,8 +17,8 @@ const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
 
 const SITE_LINKS = {
-  discord: "https://discord.gg/cju3DSSdju",
-  join: "https://discord.gg/cju3DSSdju",
+  discord: "https://discord.gg/4hkMf6kvsS",
+  join: "https://discord.gg/4hkMf6kvsS",
   wom: `https://wiseoldman.net/groups/${WOM_GROUP_ID}`,
 };
 
