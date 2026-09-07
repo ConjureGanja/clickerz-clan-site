@@ -5,7 +5,7 @@ import SectionBadge from "../components/SectionBadge";
 const WOM_GROUP_ID = 21596;
 
 const SITE_LINKS = {
-  discord: "https://discord.gg/cju3DSSdju",
+  discord: "https://discord.gg/4hkMf6kvsS",
   wom: `https://wiseoldman.net/groups/${WOM_GROUP_ID}`,
 };
 

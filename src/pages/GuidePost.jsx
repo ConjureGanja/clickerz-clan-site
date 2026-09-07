@@ -80,7 +80,7 @@ export default function GuidePost() {
               ← Browse All Guides
             </Link>
             <a
-              href="https://discord.gg/cju3DSSdju"
+              href="https://discord.gg/4hkMf6kvsS"
               target="_blank"
               rel="noreferrer"
               className="button button--primary"

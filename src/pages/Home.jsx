@@ -17,8 +17,8 @@ const WOM_GROUP_ID = 21596;
 const DISCORD_GUILD_ID = "1466655968438779997";
 
 const SITE_LINKS = {
-  discord: "https://discord.gg/cju3DSSdju",
-  join: "https://discord.gg/cju3DSSdju",
+  discord: "https://discord.gg/4hkMf6kvsS",
+  join: "https://discord.gg/4hkMf6kvsS",
   wom: `https://wiseoldman.net/groups/${WOM_GROUP_ID}`,
 };
 
@@ -513,10 +513,16 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
   );
 }
 
+const TOP_N = 10;
+const WOM_HISCORES_PAGE_SIZE = 100;
+
 function LeaderboardSection({ leaderboard }) {
   const [activeTab, setActiveTab] = useState("skills");
+  const [showAll, setShowAll] = useState(false);
   const { data, loading, error } = leaderboard;
-  const entries = activeTab === "skills" ? data.skills : data.bosses;
+  const allEntries = activeTab === "skills" ? data.skills : data.bosses;
+  const entries = showAll ? allEntries : allEntries.slice(0, TOP_N);
+  const canToggle = allEntries.length > TOP_N;
 
   const rankIcon = (rank) => {
     if (rank === 1) return "🥇";
@@ -537,14 +543,14 @@ function LeaderboardSection({ leaderboard }) {
         <div className="tab-switcher">
           <button
             type="button"
-            onClick={() => setActiveTab("skills")}
+            onClick={() => { setActiveTab("skills"); setShowAll(false); }}
             className={activeTab === "skills" ? "tab-button tab-button--active" : "tab-button"}
           >
             ⚔️ Total Level
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("bosses")}
+            onClick={() => { setActiveTab("bosses"); setShowAll(false); }}
             className={activeTab === "bosses" ? "tab-button tab-button--active" : "tab-button"}
           >
             🐉 Boss EHB
@@ -577,6 +583,19 @@ function LeaderboardSection({ leaderboard }) {
             ))
           )}
         </div>
+
+        {canToggle && (
+          <div style={{ textAlign: "center", marginTop: "1rem" }}>
+            <button
+              type="button"
+              className="button button--secondary"
+              aria-expanded={showAll}
+              onClick={() => setShowAll((prev) => !prev)}
+            >
+              {showAll ? "Show less" : "Show all"}
+            </button>
+          </div>
+        )}
 
         <p className="leaderboard-note">
           {error ? (
@@ -728,23 +747,67 @@ export default function Home() {
 
   // WOM stats
   useEffect(() => {
-    cachedFetch(`wom:group:${WOM_GROUP_ID}`, TTL_WOM_STATS, () =>
-      fetchJsonOk(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`),
-    )
-      .then((g) => setWomMemberCount(g.memberCount))
-      .catch(() => {});
+    const loadHiscoresPage = (metric, limit, offset = 0) => cachedFetch(
+      `wom:hiscores:${WOM_GROUP_ID}:${metric}:${limit}:${offset}`,
+      TTL_WOM_STATS,
+      () =>
+        fetchJsonOk(
+          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=${metric}&limit=${limit}&offset=${offset}`,
+        ),
+    );
 
-    Promise.allSettled([
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:overall:10`, TTL_WOM_STATS, () =>
-        fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=overall&limit=10`,
-        ),
-      ),
-      cachedFetch(`wom:hiscores:${WOM_GROUP_ID}:ehb:10`, TTL_WOM_STATS, () =>
-        fetchJsonOk(
-          `https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}/hiscores?metric=ehb&limit=10`,
-        ),
-      ),
+    const loadAllHiscoresPages = async (metric) => {
+      const pages = [];
+      let offset = 0;
+
+      while (true) {
+        const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset).catch((error) => {
+          if (pages.length > 0) {
+            return [];
+          }
+          throw error;
+        });
+
+        if (page.length === 0) {
+          return pages;
+        }
+
+        pages.push(...page);
+
+        if (page.length < WOM_HISCORES_PAGE_SIZE) {
+          return pages;
+        }
+
+        offset += WOM_HISCORES_PAGE_SIZE;
+      }
+    };
+
+    const loadLeaderboardMetric = (metric, memberCount) => {
+      if (memberCount == null) {
+        return loadAllHiscoresPages(metric);
+      }
+
+      const entryCount = Math.max(memberCount ?? 0, TOP_N);
+      if (entryCount <= TOP_N) {
+        return loadHiscoresPage(metric, TOP_N);
+      }
+      if (entryCount <= WOM_HISCORES_PAGE_SIZE) {
+        return loadHiscoresPage(metric, entryCount);
+      }
+
+      const pageOffsets = Array.from(
+        { length: Math.ceil(entryCount / WOM_HISCORES_PAGE_SIZE) },
+        (_, pageIndex) => pageIndex * WOM_HISCORES_PAGE_SIZE,
+      );
+
+      return Promise.all(
+        pageOffsets.map((offset) => loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset)),
+      ).then((pages) => pages.flat());
+    };
+
+    const loadLeaderboard = (memberCount) => Promise.allSettled([
+      loadLeaderboardMetric("overall", memberCount),
+      loadLeaderboardMetric("ehb", memberCount),
     ]).then(([skillsResult, bossesResult]) => {
       const skills = skillsResult.status === "fulfilled" ? skillsResult.value.map((entry, i) => ({
         rank: i + 1,
@@ -758,6 +821,15 @@ export default function Home() {
       })) : [];
       setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
     });
+
+    cachedFetch(`wom:group:${WOM_GROUP_ID}`, TTL_WOM_STATS, () =>
+      fetchJsonOk(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`),
+    )
+      .then((g) => {
+        setWomMemberCount(g.memberCount);
+        return loadLeaderboard(g.memberCount);
+      })
+      .catch(() => loadLeaderboard());
 
     fetchGroupCompetitions()
       .then(comps => {

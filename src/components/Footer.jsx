@@ -1,5 +1,5 @@
 const SITE_LINKS = {
-  discord: "https://discord.gg/cju3DSSdju",
+  discord: "https://discord.gg/4hkMf6kvsS",
   twitter: "https://x.com/YOUR_HANDLE",
   reddit: "https://reddit.com/",
 };
