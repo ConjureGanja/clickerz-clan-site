@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { id: "/leaderboards", label: "Leaderboards" },
   { id: "/clicking-game", label: "Clicking Game" },
   { id: "/guides", label: "Guides" },
+  { id: "/poh-planner", label: "POH Planner" },
   { id: "/stats", label: "Clan Stats" },
   { id: "/#join", label: "Join Us" },
 ];
