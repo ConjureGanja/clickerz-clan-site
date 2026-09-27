@@ -20,6 +20,20 @@ npm run build
 npm run preview
 ```
 
+## POH planner
+
+`/poh-planner` is a client-side Old School RuneScape house planner for the G I Clickerz team house. It does not call a server. Layouts are saved in the browser and can be exported as JSON.
+
+How the room data is sourced, how upstairs and the dungeon are opened, and how furniture tiers work is written up in [docs/poh-planner.md](docs/poh-planner.md).
+
+Rebuild the single-file offline copy with:
+
+```bash
+npm run build:poh-html
+```
+
+That refreshes `public/poh-planner.html`.
+
 ## Cloudflare Pages
 
 Use these settings in Cloudflare Pages:
