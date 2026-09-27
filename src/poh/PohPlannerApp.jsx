@@ -26,7 +26,9 @@ function groupOf(room) {
 }
 
 function newUid() {
-  return Math.random().toString(36).slice(2, 10);
+  const bytes = new Uint8Array(4);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function normalizeLayout(input) {
