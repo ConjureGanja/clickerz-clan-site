@@ -1,3 +1,5 @@
+import { selectedTier } from "./tiers.js";
+
 /**
  * Door geometry for the POH planner.
  *
@@ -78,18 +80,33 @@ export function edgeState(placed, roomById, x, y, side) {
   return "wall";
 }
 
-export function layoutStats(placed, roomById) {
+export function layoutStats(placedOrFloors, roomById) {
+  const lists = placedOrFloors && (placedOrFloors.ground || placedOrFloors.upper || placedOrFloors.dungeon)
+    ? [placedOrFloors.ground || [], placedOrFloors.upper || [], placedOrFloors.dungeon || []]
+    : [placedOrFloors || []];
   let cost = 0;
   let level = 0;
   let unknown = 0;
-  for (const piece of placed) {
-    const room = roomById[piece.roomId];
-    if (!room) {
-      unknown += 1;
-      continue;
+  let count = 0;
+  let unpriced = 0;
+  for (const placed of lists) {
+    for (const piece of placed) {
+      const room = roomById[piece.roomId];
+      if (!room) {
+        unknown += 1;
+        continue;
+      }
+      count += 1;
+      cost += room.cost;
+      if (room.level > level) level = room.level;
+      for (const spot of room.hotspots) {
+        const tier = selectedTier(piece, spot);
+        if (!tier) continue;
+        if (typeof tier.level === "number" && tier.level > level) level = tier.level;
+        if (typeof tier.cost === "number") cost += tier.cost;
+        else unpriced += 1;
+      }
     }
-    cost += room.cost;
-    if (room.level > level) level = room.level;
   }
-  return { cost, level, count: placed.length - unknown, unknown };
+  return { cost, level, count, unknown, unpriced };
 }

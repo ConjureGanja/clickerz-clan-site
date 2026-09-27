@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ROOM_ART } from "./art";
+import { BuiltFurniture } from "./art/RoomSvg";
 import { GI_CLICKERZ_LAYOUT, cloneLayout, emptyLayout } from "./exampleLayout";
+import { cellHint, floorProblems, roomAllowedOnFloor } from "./floors";
 import { edgeState, layoutStats, rotatePoint, rotatedSides } from "./geometry";
 import "./poh.css";
 import {
@@ -12,12 +14,19 @@ import {
   formatCoins,
 } from "./rooms";
 import { readStore, writeStore } from "./storage";
+import { cleanBuilt, formatMaterials, formatTierCost, selectedTier, tierChoice } from "./tiers";
 
 const GROUPS = [
   { id: "outdoor", label: "Outdoor" },
   { id: "indoor", label: "Indoor" },
   { id: "dungeon", label: "Basement" },
 ];
+
+const FLOOR_RULES = {
+  ground: "Ground floor: indoor and outdoor rooms. A staircase in a skill hall or quest hall is what lets you start the floor above. A dungeon entrance, built as the centrepiece of a garden or formal garden, is what lets you start the dungeon.",
+  upper: "Upper floor: put the first room on top of a skill hall or quest hall that already has a staircase. Further rooms have to touch that upper floor, and they can only sit on indoor rooms — not on a garden, formal garden, superior garden, or outdoor menagerie.",
+  dungeon: "Dungeon: put the first room directly under a garden or formal garden whose centrepiece is a dungeon entrance. After that, dungeon rooms can extend in any direction, including under empty tiles. In game a hall staircase can also open a dungeon; this planner starts the dungeon from a dungeon entrance only.",
+};
 
 function groupOf(room) {
   if (room.placement.floors.length === 1 && room.placement.floors[0] === "dungeon") return "dungeon";
@@ -38,20 +47,25 @@ function normalizeLayout(input) {
   const cleanList = (list) =>
     (Array.isArray(list) ? list : [])
       .filter((piece) => piece && ROOM_BY_ID[piece.roomId])
-      .map((piece) => ({
-        uid: String(piece.uid || newUid()),
-        roomId: piece.roomId,
-        x: Number(piece.x),
-        y: Number(piece.y),
-        rotation: ((Number(piece.rotation) % 4) + 4) % 4,
-      }))
+      .map((piece) => {
+        const room = ROOM_BY_ID[piece.roomId];
+        const built = cleanBuilt(piece.built, room);
+        return {
+          uid: String(piece.uid || newUid()),
+          roomId: piece.roomId,
+          x: Number(piece.x),
+          y: Number(piece.y),
+          rotation: ((Number(piece.rotation) % 4) + 4) % 4,
+          ...(built ? { built } : {}),
+        };
+      })
       .filter((piece) => piece.x >= 0 && piece.y >= 0 && piece.x < GRID_SIZE && piece.y < GRID_SIZE);
 
   return {
     version: 1,
     name: typeof source.name === "string" && source.name.trim() ? source.name.trim() : "Imported layout",
     presetId: source.presetId || null,
-    activeFloor: "ground",
+    activeFloor: ["ground", "upper", "dungeon"].includes(source.activeFloor) ? source.activeFloor : "ground",
     floors: {
       ground: cleanList(source.floors.ground),
       upper: cleanList(source.floors.upper),
@@ -84,23 +98,27 @@ export default function PohPlannerApp() {
   const [hoverCell, setHoverCell] = useState(null);
   const fileRef = useRef(null);
   const layout = store.current;
+  const floorId = ["ground", "upper", "dungeon"].includes(layout.activeFloor) ? layout.activeFloor : "ground";
   const ground = layout.floors.ground;
+  const placed = layout.floors[floorId];
 
   useEffect(() => {
     writeStore(store);
   }, [store]);
 
-  const selected = ground.find((piece) => piece.uid === selectedUid) || null;
+  const selected = placed.find((piece) => piece.uid === selectedUid) || null;
   const selectedRoom = selected ? ROOM_BY_ID[selected.roomId] : null;
-  const stats = layoutStats(ground, ROOM_BY_ID);
+  const stats = layoutStats(layout.floors, ROOM_BY_ID);
 
   const warnings = useMemo(() => {
     const counts = {};
     const notes = [];
-    for (const piece of ground) {
-      const room = ROOM_BY_ID[piece.roomId];
-      if (!room?.uniqueGroup) continue;
-      counts[room.uniqueGroup] = (counts[room.uniqueGroup] || 0) + 1;
+    for (const list of [layout.floors.ground, layout.floors.upper, layout.floors.dungeon]) {
+      for (const piece of list) {
+        const room = ROOM_BY_ID[piece.roomId];
+        if (!room?.uniqueGroup) continue;
+        counts[room.uniqueGroup] = (counts[room.uniqueGroup] || 0) + 1;
+      }
     }
     for (const [group, count] of Object.entries(counts)) {
       if (count > 1) {
@@ -108,50 +126,62 @@ export default function PohPlannerApp() {
         notes.push(`More than one ${name.replace(" (indoor)", "").replace(" (outdoor)", "")} — the game only allows one.`);
       }
     }
-    const hidden = layout.floors.upper.length + layout.floors.dungeon.length;
-    if (hidden > 0) {
-      notes.push(`${hidden} room${hidden === 1 ? "" : "s"} saved on the upper floor or dungeon. Those floors are stored for later and are not shown on this grid.`);
-    }
     return notes;
-  }, [ground, layout.floors.upper.length, layout.floors.dungeon.length]);
+  }, [layout.floors]);
 
   function commit(nextLayout, message) {
     setStore((prev) => ({ ...prev, current: nextLayout }));
     if (message) setStatus(message);
   }
 
-  function editGround(mutator, message) {
-    const nextGround = mutator(ground.map((piece) => ({ ...piece })));
+  function commitFloors(nextFloors, message, clearPreset) {
+    const problems = floorProblems(nextFloors, ROOM_BY_ID);
+    if (problems.length) {
+      setStatus(problems[0]);
+      return false;
+    }
     commit(
       {
         ...layout,
-        presetId: null,
-        flow: [],
-        floors: { ...layout.floors, ground: nextGround },
+        presetId: clearPreset ? null : layout.presetId,
+        flow: clearPreset ? [] : layout.flow,
+        floors: nextFloors,
       },
       message,
     );
+    return true;
+  }
+
+  function editPlaced(mutator, message, clearPreset = false) {
+    const nextList = mutator(placed.map((piece) => ({ ...piece, built: piece.built ? { ...piece.built } : undefined })));
+    return commitFloors({ ...layout.floors, [floorId]: nextList }, message, clearPreset && floorId === "ground");
   }
 
   function placeRoom(roomId, x, y) {
-    const occupied = ground.find((piece) => piece.x === x && piece.y === y);
+    const room = ROOM_BY_ID[roomId];
+    if (!roomAllowedOnFloor(room, floorId)) {
+      setStatus(`${room?.name || "That room"} cannot be built on this floor.`);
+      return;
+    }
+    const occupied = placed.find((piece) => piece.x === x && piece.y === y);
     if (occupied) {
       setSelectedUid(occupied.uid);
       setStatus("That tile already has a room. Move it, or pick an empty tile.");
       return;
     }
     const piece = { uid: newUid(), roomId, x, y, rotation: 0 };
-    editGround((rooms) => [...rooms, piece], `Placed ${ROOM_BY_ID[roomId].name}.`);
-    setSelectedUid(piece.uid);
-    setArmedId(null);
+    if (editPlaced((rooms) => [...rooms, piece], `Placed ${room.name}.`, true)) {
+      setSelectedUid(piece.uid);
+      setArmedId(null);
+    }
   }
 
   function moveRoom(uid, x, y) {
-    const moving = ground.find((piece) => piece.uid === uid);
+    const moving = placed.find((piece) => piece.uid === uid);
     if (!moving) return;
     if (moving.x === x && moving.y === y) return;
-    const occupied = ground.find((piece) => piece.x === x && piece.y === y);
-    editGround((rooms) => {
+    const occupied = placed.find((piece) => piece.x === x && piece.y === y);
+    if (editPlaced((rooms) => {
       if (!occupied) {
         return rooms.map((piece) => (piece.uid === uid ? { ...piece, x, y } : piece));
       }
@@ -160,21 +190,50 @@ export default function PohPlannerApp() {
         if (piece.uid === occupied.uid) return { ...piece, x: moving.x, y: moving.y };
         return piece;
       });
-    }, occupied ? "Swapped the two rooms." : "Moved the room.");
-    setSelectedUid(uid);
+    }, occupied ? "Swapped the two rooms." : "Moved the room.", true)) {
+      setSelectedUid(uid);
+    }
   }
 
   function rotateRoom(uid) {
-    editGround(
+    editPlaced(
       (rooms) => rooms.map((piece) => (piece.uid === uid ? { ...piece, rotation: (piece.rotation + 1) % 4 } : piece)),
       "Rotated 90° clockwise. Doors turn with the room.",
+      true,
     );
   }
 
   function deleteRoom(uid) {
-    const piece = ground.find((room) => room.uid === uid);
-    editGround((rooms) => rooms.filter((room) => room.uid !== uid), piece ? `Removed ${ROOM_BY_ID[piece.roomId]?.name || "room"}.` : "Removed.");
-    if (selectedUid === uid) setSelectedUid(null);
+    const piece = placed.find((room) => room.uid === uid);
+    if (editPlaced(
+      (rooms) => rooms.filter((room) => room.uid !== uid),
+      piece ? `Removed ${ROOM_BY_ID[piece.roomId]?.name || "room"}.` : "Removed.",
+      true,
+    ) && selectedUid === uid) {
+      setSelectedUid(null);
+    }
+  }
+
+  function setTier(uid, spotId, tierId) {
+    const piece = placed.find((room) => room.uid === uid);
+    const room = piece ? ROOM_BY_ID[piece.roomId] : null;
+    const spot = room?.hotspots.find((entry) => entry.id === spotId);
+    if (!spot) return;
+    if (tierId && !spot.tiers.some((tier) => tier.id === tierId)) return;
+    const picked = spot.tiers.find((tier) => tier.id === tierId);
+    editPlaced(
+      (rooms) => rooms.map((entry) => (
+        entry.uid === uid ? { ...entry, built: { ...(entry.built || {}), [spotId]: tierId } } : entry
+      )),
+      picked ? `Set ${spot.name} to ${picked.name}.` : `Cleared ${spot.name}.`,
+      false,
+    );
+  }
+
+  function showFloor(nextFloor) {
+    commit({ ...layout, activeFloor: nextFloor }, null);
+    setArmedId(null);
+    setStatus(FLOOR_RULES[nextFloor]);
   }
 
   const actions = useRef({});
@@ -216,7 +275,7 @@ export default function PohPlannerApp() {
   }
 
   function onCellClick(x, y) {
-    const occupied = ground.find((piece) => piece.x === x && piece.y === y);
+    const occupied = placed.find((piece) => piece.x === x && piece.y === y);
     if (armedId && !occupied) {
       placeRoom(armedId, x, y);
       return;
@@ -261,7 +320,8 @@ export default function PohPlannerApp() {
   }
 
   function clearLayout() {
-    if (ground.length && !window.confirm("Clear every room on the ground floor?")) return;
+    const occupied = layout.floors.ground.length + layout.floors.upper.length + layout.floors.dungeon.length;
+    if (occupied && !window.confirm("Clear every room on the ground floor, upper floor, and dungeon?")) return;
     commit(emptyLayout("Untitled layout"), "Cleared the ground floor. Upper and dungeon lists were cleared too.");
     setSelectedUid(null);
     setArmedId(null);
@@ -301,12 +361,13 @@ export default function PohPlannerApp() {
   }
 
   const filtered = ROOMS.filter((room) => {
+    if (!roomAllowedOnFloor(room, floorId)) return false;
     const hay = `${room.name} ${room.level}`.toLowerCase();
     return hay.includes(query.trim().toLowerCase());
   });
 
   const flowFrom = new Map();
-  if (layout.presetId === "gi-clickerz") {
+  if (floorId === "ground" && layout.presetId === "gi-clickerz") {
     for (const arrow of layout.flow || []) {
       const key = `${arrow.from[0]},${arrow.from[1]}`;
       const dir = arrow.to[0] > arrow.from[0] ? "e"
@@ -325,7 +386,7 @@ export default function PohPlannerApp() {
           <h2 className="poh-title">G I Clickerz <span>— POH planner</span></h2>
           <div className="poh-stats">
             <div className="poh-stat"><strong>{stats.count}</strong> rooms</div>
-            <div className="poh-stat">Build cost <strong>{formatCoins(stats.cost)}</strong></div>
+            <div className="poh-stat" title="Room shells plus the furniture currently selected. Coin figures are Grand Exchange prices from the wiki on 2026-09-27.">Build cost <strong>{formatCoins(stats.cost)}</strong></div>
             <div className="poh-stat">Highest level <strong>{stats.level || "—"}</strong></div>
           </div>
         </div>
@@ -366,14 +427,17 @@ export default function PohPlannerApp() {
             <button
               key={floor.id}
               type="button"
-              className={floor.id === "ground" ? "poh-floor poh-floor--on" : "poh-floor"}
-              disabled={!floor.implemented}
+              role="tab"
+              aria-selected={floor.id === floorId}
+              className={floor.id === floorId ? "poh-floor poh-floor--on" : "poh-floor"}
               title={floor.note}
+              onClick={() => showFloor(floor.id)}
             >
               {floor.name}
             </button>
           ))}
         </div>
+        <p className="poh-floor-rule">{FLOOR_RULES[floorId]}</p>
 
         <div className="poh-layout">
           <aside className="poh-palette">
@@ -428,13 +492,14 @@ export default function PohPlannerApp() {
                 {Array.from({ length: GRID_SIZE * GRID_SIZE }, (_, index) => {
                   const x = index % GRID_SIZE;
                   const y = Math.floor(index / GRID_SIZE);
-                  const piece = ground.find((room) => room.x === x && room.y === y);
+                  const piece = placed.find((room) => room.x === x && room.y === y);
                   const room = piece ? ROOM_BY_ID[piece.roomId] : null;
                   const Art = room ? ROOM_ART[room.id] : null;
-                  const east = piece ? edgeState(ground, ROOM_BY_ID, x, y, "E") : null;
-                  const south = piece ? edgeState(ground, ROOM_BY_ID, x, y, "S") : null;
-                  const arrows = flowFrom.get(`${x},${y}`) || [];
+                  const east = piece ? edgeState(placed, ROOM_BY_ID, x, y, "E") : null;
+                  const south = piece ? edgeState(placed, ROOM_BY_ID, x, y, "S") : null;
+                  const arrows = floorId === "ground" ? flowFrom.get(`${x},${y}`) || [] : [];
                   const spawn = spawnPoint(room, piece);
+                  const hint = cellHint(floorId, ground, ROOM_BY_ID, x, y);
                   return (
                     <div
                       key={`${x}-${y}`}
@@ -443,6 +508,9 @@ export default function PohPlannerApp() {
                         "poh-cell",
                         piece && selectedUid === piece.uid ? "poh-cell--selected" : "",
                         hoverCell === `${x},${y}` ? "poh-cell--over" : "",
+                        hint === "support" ? "poh-cell--support" : "",
+                        hint === "stairs" ? "poh-cell--stairs" : "",
+                        hint === "entrance" ? "poh-cell--entrance" : "",
                       ].filter(Boolean).join(" ")}
                       onDragOver={(event) => {
                         event.preventDefault();
@@ -467,10 +535,14 @@ export default function PohPlannerApp() {
                     >
                       {piece && Art && (
                         <div className="poh-rotator" style={{ transform: `rotate(${piece.rotation * 90}deg)` }}>
-                          <Art room={room} />
+                          <BuiltFurniture built={piece.built} room={room}>
+                            <Art room={room} />
+                          </BuiltFurniture>
                         </div>
                       )}
                       {room && <div className="poh-tile-label">{room.shortName}</div>}
+                      {!piece && hint === "stairs" && <span className="poh-cell-tag">Stairs</span>}
+                      {!piece && hint === "entrance" && <span className="poh-cell-tag">Entrance</span>}
                       {spawn && (
                         <div className="poh-spawn" style={{ left: `${spawn.x}%`, top: `${spawn.y}%` }} title="Spawn, north-west of the exit portal">
                           X
@@ -498,7 +570,11 @@ export default function PohPlannerApp() {
                     <div className="poh-rotator" style={{ transform: `rotate(${selected.rotation * 90}deg)` }}>
                       {(() => {
                         const Art = ROOM_ART[selectedRoom.id];
-                        return Art ? <Art room={selectedRoom} /> : null;
+                        return Art ? (
+                          <BuiltFurniture built={selected.built} room={selectedRoom}>
+                            <Art room={selectedRoom} />
+                          </BuiltFurniture>
+                        ) : null;
                       })()}
                     </div>
                   ) : (
@@ -517,17 +593,34 @@ export default function PohPlannerApp() {
                       {selectedRoom.doorSourceNote && selectedRoom.id === "dungeon-corridor" && (
                         <p className="poh-note">{selectedRoom.doorSourceNote}</p>
                       )}
-                      <ul className="poh-hotspots">
-                        {selectedRoom.hotspots.map((spot) => (
-                          <li key={spot.id} title={`${spot.tiers[0].verified ? "" : "Top-tier name was not copied from the wiki table. "}${spot.anchorNote}`}>
-                            {spot.name}: {spot.tiers[0].name}
-                            {spot.tiers[0].level ? ` (${spot.tiers[0].level})` : ""}
-                          </li>
-                        ))}
+                      <ul className="poh-build">
+                        {selectedRoom.hotspots.map((spot) => {
+                          const tier = selectedTier(selected, spot);
+                          const mats = tier ? formatMaterials(tier) : "Nothing built here.";
+                          return (
+                            <li key={spot.id}>
+                              <label>
+                                {spot.name}
+                                <select
+                                  aria-label={`${spot.name} build`}
+                                  value={tierChoice(selected, spot)}
+                                  title={tier ? `${tier.name}. ${mats}. ${formatTierCost(tier)}. ${tier.source}` : "Nothing built in this hotspot."}
+                                  onChange={(event) => setTier(selected.uid, spot.id, event.target.value)}
+                                >
+                                  <option value="">Nothing built</option>
+                                  {spot.tiers.map((option) => (
+                                    <option key={option.id} value={option.id}>
+                                      {optionLabel(option)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <div className="poh-mats">{mats}{tier ? ` · ${formatTierCost(tier)}` : ""}</div>
+                            </li>
+                          );
+                        })}
                       </ul>
-                      {selectedRoom.hotspots.some((spot) => !spot.tiers[0].verified) && (
-                        <p className="poh-note">Door sides are from the wiki. Furniture names without a level were not copied from a build table.</p>
-                      )}
+                      <p className="poh-note">Levels, materials, and coin costs are the wiki build rows. Coin figures are Grand Exchange prices from 2026-09-27. Staircases and dungeon entrances start empty until you choose one.</p>
                       <div className="poh-actions">
                         <button type="button" className="poh-btn poh-btn--gold" onClick={() => rotateRoom(selected.uid)}>Rotate (R)</button>
                         <button type="button" className="poh-btn" onClick={() => deleteRoom(selected.uid)}>Delete</button>
@@ -569,7 +662,7 @@ export default function PohPlannerApp() {
                   <li>Prayer: spawn, south into the chapel. The gilded altar sits on the west wall, sideways to that door.</li>
                 </ol>
                 <p className="poh-help">
-                  Hosidius house. Build cost above is the coin cost of the rooms only, not the furniture. Press R to rotate, Delete to remove, and the arrow keys to move the selected room.
+                  Hosidius house. The build cost adds the room shells and the furniture selected in each hotspot. Press R to rotate, Delete to remove, and the arrow keys to move the selected room. Upstairs starts on a built staircase. The dungeon starts under a dungeon entrance.
                   {" "}
                   <a href="/poh-planner.html">Open the offline copy</a> if you want one file with no site around it.
                 </p>
@@ -609,11 +702,20 @@ function spawnPoint(room, piece) {
   if (!room?.hasExitPortal || !piece) return null;
   const portal = room.hotspots.find((spot) => spot.id === "centrepiece");
   if (!portal) return null;
+  const tier = selectedTier(piece, portal);
+  if (!tier || !/exit portal/i.test(tier.name)) return null;
   const point = rotatePoint(portal.anchor.x, portal.anchor.y, piece.rotation);
   return {
     x: Math.min(88, Math.max(12, point.x - 12)),
     y: Math.min(84, Math.max(14, point.y - 12)),
   };
+}
+
+function optionLabel(tier) {
+  const mats = formatMaterials(tier);
+  const short = mats.length > 64 ? `${mats.slice(0, 61)}…` : mats;
+  const level = typeof tier.level === "number" ? `level ${tier.level}` : "level n/a";
+  return `${tier.name} — ${level} — ${short} — ${formatTierCost(tier)}`;
 }
 
 function roomTooltip(room) {

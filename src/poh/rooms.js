@@ -22,14 +22,17 @@
  * `hotspots[].anchor` is a point in the default orientation, viewBox 0–100,
  * y growing south. The wiki lists hotspot names, not tile coordinates, so
  * `anchorVerified` is false unless a room page states the position relative
- * to the door. Tier arrays currently hold only the max construction option
- * so a later tier selector can append the lower options without a schema change.
+ * to the door. After the room list is built, `furniture.js` replaces each
+ * hotspot's tiers with the wiki build table (level, materials, coin cost).
  *
  * Floor slots
  * -----------
- * `placement.floors` is where the game allows the room. v1 only edits the
- * ground floor; `upper` and `dungeon` arrays already exist on saved layouts.
+ * `placement.floors` is where the game allows the room. The upper floor can
+ * only be started above a built staircase, and only over indoor rooms. The
+ * dungeon can only be started under a built dungeon entrance.
  */
+
+import { FURNITURE } from "./furniture.js";
 
 const POH = "https://oldschool.runescape.wiki/w/Player-owned_house";
 
@@ -83,7 +86,7 @@ function room(definition) {
 const GROUND_OR_UPPER = {
   floors: ["ground", "upper"],
   outdoor: false,
-  note: "Indoor room. The wiki allows it on the ground floor or the single upper floor, not in the dungeon. v1 only places rooms on the ground-floor grid.",
+  note: "Indoor room. It can be built on the ground floor, or upstairs once that block of the upper floor is connected to a staircase and sits on indoor rooms.",
 };
 
 const GROUND_OUTDOOR = {
@@ -95,7 +98,7 @@ const GROUND_OUTDOOR = {
 const DUNGEON_ONLY = {
   floors: ["dungeon"],
   outdoor: false,
-  note: "Basement only. In game you build these from a staircase (skill or quest hall) or a dungeon entrance (garden or formal garden). v1 keeps dungeon rooms in the layout file but the grid shown is the ground floor, so you can still sketch them here.",
+  note: "Basement only. Start it under a garden or formal garden whose centrepiece is a dungeon entrance, then build out in any direction.",
 };
 
 export const ROOMS = [
@@ -410,7 +413,7 @@ export const ROOMS = [
     source: "https://oldschool.runescape.wiki/w/Costume_room",
     placement: {
       ...GROUND_OR_UPPER,
-      note: "Indoor room with a single door (infobox doors = s). Only one costume room is allowed, and it cannot be removed until stored items are taken out. v1 does not enforce that removal rule.",
+      note: "Indoor room with a single door (infobox doors = s). Only one costume room is allowed. In game it cannot be removed until stored items are taken out. The planner does not enforce that removal rule.",
     },
     uniqueGroup: "costume-room",
     floorColor: "#4a3b55",
@@ -765,14 +768,21 @@ function dungeonHotspots(kind) {
   return shared;
 }
 
+for (const builtRoom of ROOMS) {
+  for (const spot of builtRoom.hotspots) {
+    const tiers = FURNITURE[`${builtRoom.id}:${spot.id}`];
+    if (tiers?.length) spot.tiers = tiers;
+  }
+}
+
 export const ROOM_BY_ID = Object.fromEntries(ROOMS.map((entry) => [entry.id, entry]));
 
 export const FLOORS = [
   {
     id: "upper",
     name: "Upper floor",
-    implemented: false,
-    note: "v1 stores an upper-floor list but does not edit it. Indoor rooms can move here later.",
+    implemented: true,
+    note: "Start on top of a skill hall or quest hall with a staircase built, then build across other indoor rooms. Outdoor rooms cannot hold an upper floor.",
   },
   {
     id: "ground",
@@ -783,8 +793,8 @@ export const FLOORS = [
   {
     id: "dungeon",
     name: "Dungeon",
-    implemented: false,
-    note: "v1 stores a dungeon list but does not edit it. Basement rooms can move here later.",
+    implemented: true,
+    note: "Start directly under a garden or formal garden with a dungeon entrance built. After that, rooms can extend in any direction.",
   },
 ];
 

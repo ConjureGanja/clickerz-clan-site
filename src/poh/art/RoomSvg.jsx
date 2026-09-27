@@ -1,8 +1,17 @@
+import { createContext, useContext } from "react";
+import { selectedTier, tierScale } from "../tiers";
+
 /**
  * Shared room frame. Door openings are drawn from the wiki default `doors`
  * list. The planner rotates the whole SVG, so doors and furniture turn together.
  * Hotspot groups use data-hotspot (not id) so two copies of a room stay valid.
  */
+
+const BuiltContext = createContext(null);
+
+export function BuiltFurniture({ built, room, children }) {
+  return <BuiltContext.Provider value={{ built, room }}>{children}</BuiltContext.Provider>;
+}
 
 const WALL = "#1a140f";
 const OPEN = "#070b16";
@@ -75,7 +84,23 @@ export function DoorWalls({ doors }) {
 }
 
 export function Hotspot({ name, children }) {
-  return <g data-hotspot={name}>{children}</g>;
+  const ctx = useContext(BuiltContext);
+  const spot = ctx?.room?.hotspots?.find((entry) => entry.id === name);
+  if (!ctx || !spot) return <g data-hotspot={name}>{children}</g>;
+  const tier = selectedTier({ built: ctx.built }, spot);
+  if (!tier) return null;
+  const scale = tierScale(spot, tier);
+  if (scale === 1) return <g data-hotspot={name} data-tier={tier.id}>{children}</g>;
+  const { x, y } = spot.anchor;
+  return (
+    <g
+      data-hotspot={name}
+      data-tier={tier.id}
+      transform={`translate(${x} ${y}) scale(${scale}) translate(${-x} ${-y})`}
+    >
+      {children}
+    </g>
+  );
 }
 
 export function RoomSvg({ floor, doors, title, pattern = "stone", children }) {

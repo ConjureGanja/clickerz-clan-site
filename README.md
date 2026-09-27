@@ -24,7 +24,7 @@ npm run preview
 
 `/poh-planner` is a client-side Old School RuneScape house planner for the G I Clickerz team house. It does not call a server. Layouts are saved in the browser and can be exported as JSON.
 
-How the room data is sourced, and how to add furniture tiers later, is written up in [docs/poh-planner.md](docs/poh-planner.md).
+How the room data is sourced, how upstairs and the dungeon are opened, and how furniture tiers work is written up in [docs/poh-planner.md](docs/poh-planner.md).
 
 Rebuild the single-file offline copy with:
 

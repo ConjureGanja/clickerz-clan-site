@@ -141,6 +141,13 @@
   opacity: 0.55;
 }
 
+.poh-floor-rule {
+  margin: 0.45rem 0 0;
+  color: var(--poh-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .poh-layout {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -260,6 +267,32 @@
 .poh-cell--selected {
   outline: 2px solid var(--poh-gold);
   z-index: 2;
+}
+
+.poh-cell--support {
+  background: rgba(62, 160, 96, 0.16);
+}
+
+.poh-cell--stairs {
+  box-shadow: inset 0 0 0 2px rgba(240, 200, 74, 0.9);
+}
+
+.poh-cell--entrance {
+  box-shadow: inset 0 0 0 2px rgba(192, 132, 252, 0.9);
+}
+
+.poh-cell-tag {
+  position: absolute;
+  left: 4px;
+  top: 3px;
+  z-index: 3;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--poh-gold);
+  pointer-events: none;
+  text-shadow: 0 1px 2px #070b16;
 }
 
 .poh-rotator {
@@ -443,6 +476,43 @@
   padding: 0.15rem 0.5rem;
   font-size: 12px;
   font-weight: 700;
+}
+
+.poh-build {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.poh-build label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.poh-build select {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--poh-ink);
+  background: #10192d;
+  border: 1px solid var(--poh-line);
+  border-radius: 8px;
+  padding: 0.28rem 0.35rem;
+  max-width: 100%;
+}
+
+.poh-mats {
+  font-weight: 650;
+  color: var(--poh-muted);
+  line-height: 1.35;
 }
 
 .poh-legend-row {
