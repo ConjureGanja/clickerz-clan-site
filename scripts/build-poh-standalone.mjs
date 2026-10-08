@@ -1,8 +1,9 @@
 import * as esbuild from "esbuild";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const result = await esbuild.build({
-  absWorkingDir: new URL("..", import.meta.url).pathname,
+  absWorkingDir: fileURLToPath(new URL("..", import.meta.url)),
   entryPoints: ["src/poh/standalone.jsx"],
   bundle: true,
   format: "iife",
@@ -38,12 +39,6 @@ const html = `<!DOCTYPE html>
 </html>
 `;
 
-const targets = [
-  new URL("../public/poh-planner.html", import.meta.url),
-  "/opt/cursor/artifacts/poh-planner.html",
-];
-mkdirSync("/opt/cursor/artifacts", { recursive: true });
-for (const target of targets) {
-  writeFileSync(target, html);
-  console.log("wrote", target.pathname ?? target, html.length);
-}
+const target = fileURLToPath(new URL("../public/poh-planner.html", import.meta.url));
+writeFileSync(target, html);
+console.log("wrote", target, html.length);

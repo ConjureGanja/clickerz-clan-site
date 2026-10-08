@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { GI_CLICKERZ_LAYOUT, cloneLayout } from "./exampleLayout.js";
 import { cellHint, floorProblems } from "./floors.js";
 import { edgeState, layoutStats, rotatePoint, rotatedSides } from "./geometry.js";
+import { normalizeLayout } from "./layout.js";
 import { ROOM_BY_ID, ROOMS } from "./rooms.js";
 import { pieceHasRole, selectedTier } from "./tiers.js";
 
@@ -167,6 +168,43 @@ const stairLayout = cloneLayout(GI_CLICKERZ_LAYOUT);
 stairLayout.floors.ground.find((piece) => piece.roomId === "quest-hall").built = { stair: "marble-spiral" };
 expect(cellHint("upper", stairLayout.floors.ground, ROOM_BY_ID, 4, 5) === "stairs", "built stairs mark the cell above");
 expect(cellHint("dungeon", [{ ...GI_CLICKERZ_LAYOUT.floors.ground.find((piece) => piece.uid === "eg"), built: { centrepiece: "dungeon-entrance" } }], ROOM_BY_ID, 4, 3) === "entrance", "dungeon entrance marks the cell below");
+
+const inheritedRoom = cloneLayout(GI_CLICKERZ_LAYOUT);
+inheritedRoom.floors.ground = [{ uid: "bad", roomId: "constructor", x: 0, y: 0, rotation: 0 }];
+expect(normalizeLayout(inheritedRoom, () => "generated")?.floors.ground.length === 0, "inherited room ids are discarded");
+
+const fractionalRoom = cloneLayout(GI_CLICKERZ_LAYOUT);
+fractionalRoom.floors.ground = [
+  { uid: "fractional", roomId: "parlour", x: 4.5, y: 4, rotation: 0 },
+  { uid: "nonnumeric", roomId: "bedroom", x: "5", y: 4, rotation: 0 },
+];
+expect(normalizeLayout(fractionalRoom, () => "generated")?.floors.ground.length === 0, "non-integer coordinates are discarded");
+
+const invalidRotation = cloneLayout(GI_CLICKERZ_LAYOUT);
+invalidRotation.floors.ground = [
+  { uid: "missing", roomId: "parlour", x: 0, y: 0 },
+  { uid: "fractional", roomId: "bedroom", x: 1, y: 0, rotation: 1.5 },
+];
+expect(
+  normalizeLayout(invalidRotation, () => "generated")?.floors.ground.every((piece) => piece.rotation === 0),
+  "missing or fractional rotations default to zero",
+);
+
+const unsupportedFloor = cloneLayout(GI_CLICKERZ_LAYOUT);
+unsupportedFloor.floors.upper = [{ uid: "bad", roomId: "garden", x: 4, y: 3, rotation: 0 }];
+expect(normalizeLayout(unsupportedFloor, () => "generated") === null, "rooms unsupported on a floor reject the layout");
+
+const unsupportedDependency = cloneLayout(GI_CLICKERZ_LAYOUT);
+unsupportedDependency.floors.upper = [
+  { uid: "u1", roomId: "parlour", x: 4, y: 5, rotation: 0 },
+  { uid: "u2", roomId: "bedroom", x: 3, y: 5, rotation: 0 },
+];
+expect(normalizeLayout(unsupportedDependency, () => "generated") === null, "layouts without floor anchors are rejected");
+
+const validDependency = cloneLayout(GI_CLICKERZ_LAYOUT);
+validDependency.floors.ground.find((piece) => piece.roomId === "quest-hall").built = { stair: "oak-staircase" };
+validDependency.floors.upper = [{ uid: "u1", roomId: "parlour", x: 4, y: 5, rotation: 0 }];
+expect(normalizeLayout(validDependency, () => "generated") !== null, "valid floor anchors preserve the layout");
 
 const report = ROOMS.map((room) => `${room.name}\t${room.level}\t${room.cost}\t${room.doors.join("")}\t${room.placement.floors.join("+")}`).join("\n");
 fs.writeFileSync("/tmp/poh-room-report.tsv", report);

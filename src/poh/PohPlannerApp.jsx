@@ -4,6 +4,7 @@ import { BuiltFurniture } from "./art/RoomSvg";
 import { GI_CLICKERZ_LAYOUT, cloneLayout, emptyLayout } from "./exampleLayout";
 import { cellHint, floorProblems, roomAllowedOnFloor } from "./floors";
 import { edgeState, layoutStats, rotatePoint, rotatedSides } from "./geometry";
+import { newUid, normalizeLayout } from "./layout";
 import "./poh.css";
 import {
   FLOORS,
@@ -14,7 +15,7 @@ import {
   formatCoins,
 } from "./rooms";
 import { readStore, writeStore } from "./storage";
-import { cleanBuilt, formatMaterials, formatTierCost, selectedTier, tierChoice } from "./tiers";
+import { formatMaterials, formatTierCost, selectedTier, tierChoice } from "./tiers";
 
 const GROUPS = [
   { id: "outdoor", label: "Outdoor" },
@@ -32,47 +33,6 @@ function groupOf(room) {
   if (room.placement.floors.length === 1 && room.placement.floors[0] === "dungeon") return "dungeon";
   if (room.placement.outdoor) return "outdoor";
   return "indoor";
-}
-
-function newUid() {
-  const bytes = new Uint8Array(4);
-  globalThis.crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function normalizeLayout(input) {
-  if (!input || typeof input !== "object") return null;
-  const source = input.layout && input.layout.floors ? input.layout : input;
-  if (!source.floors || !Array.isArray(source.floors.ground)) return null;
-  const cleanList = (list) =>
-    (Array.isArray(list) ? list : [])
-      .filter((piece) => piece && ROOM_BY_ID[piece.roomId])
-      .map((piece) => {
-        const room = ROOM_BY_ID[piece.roomId];
-        const built = cleanBuilt(piece.built, room);
-        return {
-          uid: String(piece.uid || newUid()),
-          roomId: piece.roomId,
-          x: Number(piece.x),
-          y: Number(piece.y),
-          rotation: ((Number(piece.rotation) % 4) + 4) % 4,
-          ...(built ? { built } : {}),
-        };
-      })
-      .filter((piece) => piece.x >= 0 && piece.y >= 0 && piece.x < GRID_SIZE && piece.y < GRID_SIZE);
-
-  return {
-    version: 1,
-    name: typeof source.name === "string" && source.name.trim() ? source.name.trim() : "Imported layout",
-    presetId: source.presetId || null,
-    activeFloor: ["ground", "upper", "dungeon"].includes(source.activeFloor) ? source.activeFloor : "ground",
-    floors: {
-      ground: cleanList(source.floors.ground),
-      upper: cleanList(source.floors.upper),
-      dungeon: cleanList(source.floors.dungeon),
-    },
-    flow: source.presetId === "gi-clickerz" ? GI_CLICKERZ_LAYOUT.flow : [],
-  };
 }
 
 function initialStore() {
@@ -103,7 +63,17 @@ export default function PohPlannerApp() {
   const placed = layout.floors[floorId];
 
   useEffect(() => {
-    writeStore(store);
+    let active = true;
+    try {
+      writeStore(store);
+    } catch {
+      Promise.resolve().then(() => {
+        if (active) setStatus("Changes are only in this session; browser storage is unavailable.");
+      });
+    }
+    return () => {
+      active = false;
+    };
   }, [store]);
 
   const selected = placed.find((piece) => piece.uid === selectedUid) || null;
@@ -504,6 +474,8 @@ export default function PohPlannerApp() {
                     <div
                       key={`${x}-${y}`}
                       role="gridcell"
+                      tabIndex={0}
+                      aria-label={`${room ? room.name : "Empty"}, row ${y + 1}, column ${x + 1}`}
                       className={[
                         "poh-cell",
                         piece && selectedUid === piece.uid ? "poh-cell--selected" : "",
@@ -519,6 +491,12 @@ export default function PohPlannerApp() {
                       onDragLeave={() => setHoverCell((current) => (current === `${x},${y}` ? null : current))}
                       onDrop={(event) => onDropCell(event, x, y)}
                       onClick={() => onCellClick(x, y)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+                          event.preventDefault();
+                          onCellClick(x, y);
+                        }
+                      }}
                       onContextMenu={(event) => {
                         if (!piece) return;
                         event.preventDefault();
