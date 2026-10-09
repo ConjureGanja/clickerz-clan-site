@@ -99,6 +99,7 @@ export default function BingoApp() {
   const [importCode, setImportCode] = useState("");
   const [toast, setToast] = useState("");
   const toastTimer = useRef(null);
+  const storageWarningShown = useRef(false);
 
   const { card, versions, activeVersion } = store;
 
@@ -106,9 +107,12 @@ export default function BingoApp() {
   // (deferred a tick, so we never set state synchronously inside the effect).
   useEffect(() => {
     let active = true;
-    if (!writeStore(store)) {
+    if (!writeStore(store) && !storageWarningShown.current) {
       Promise.resolve().then(() => {
-        if (active) setToast("Browser storage is off — changes last only until you close this tab.");
+        if (active && !storageWarningShown.current) {
+          storageWarningShown.current = true;
+          setToast("Browser storage is off — changes last only while this page stays open.");
+        }
       });
     }
     return () => { active = false; };
