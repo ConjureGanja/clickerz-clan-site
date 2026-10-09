@@ -64,7 +64,13 @@ function initialSharedCard() {
 }
 
 function clearShareHash() {
-  if (window.location.hash) window.history.replaceState(null, "", window.location.pathname);
+  if (window.location.hash) {
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${window.location.pathname}${window.location.search}`,
+    );
+  }
 }
 
 // A saved snapshot. Lives outside the component because it reads the clock.
