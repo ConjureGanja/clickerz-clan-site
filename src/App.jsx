@@ -10,6 +10,7 @@ import Stats from "./pages/Stats";
 import Leaderboards from "./pages/Leaderboards";
 import ClickingGame from "./pages/ClickingGame";
 import PohPlanner from "./pages/PohPlanner";
+import Bingo from "./pages/Bingo";
 import ClickingGameWidget from "./components/ClickingGameWidget";
 
 function ScrollToTop() {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/stats" element={<Stats />} />
             <Route path="/clicking-game" element={<ClickingGame />} />
             <Route path="/poh-planner" element={<PohPlanner />} />
+            <Route path="/bingo" element={<Bingo />} />
           </Routes>
         </main>
         <Footer />

@@ -34,6 +34,15 @@ npm run build:poh-html
 
 That refreshes `public/poh-planner.html`.
 
+## Clan bingo
+
+`/bingo` is a client-side bingo card for clan events. Click a tile to complete it, finish a row or column for a bingo, and use **Edit card** to swap tasks (filtered by low/mid/high level), rename tiles, or change how many of something a tile needs. Cards can be shuffled, re-rolled from chosen levels, resized (6×4, 5×5, 4×4, 7×5), and saved as named versions that keep updating as you play. Everything is stored in the browser.
+
+**Copy share link** puts the whole card (tiles, names, progress) into the link after `#card=`, so it works without a server — whoever opens it gets asked whether to load it.
+
+- Tasks live in `src/bingo/tasks.js`. To add one, drop a `.webp` named after its id into `public/bingo/` and add a line to the list.
+- Item images are from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki/) (CC BY-NC-SA 3.0).
+
 ## Cloudflare Pages
 
 Use these settings in Cloudflare Pages:
