@@ -1,0 +1,659 @@
+/* ─────────────────────────────────────────────────────────────
+   Clan Bingo — scoped styles.
+   Every rule hangs off .bingo-app, the same way the POH planner scopes
+   its look to .poh-app, so nothing here leaks into other pages.
+   The card uses warm OSRS "stone and parchment" tones, while panels and
+   buttons follow the site's dark theme and gold accent.
+   ───────────────────────────────────────────────────────────── */
+
+.bingo-page .hero-section--compact {
+  min-height: 0;
+}
+
+.bingo-app {
+  --bg-stone: #1b1712;
+  --bg-tile: #2a241c;
+  --bg-tile-2: #221d17;
+  --bg-panel: #16151b;
+  --line: #3b3226;
+  --line-strong: #4a3e2e;
+  --parchment: #f3e7c4;
+  --muted: #a99c83;
+  --accent: var(--gold, #ffd700);
+  --accent-ink: #1a1408;
+  --select: #5aa9ff;
+  color: var(--text, #e8e8f2);
+  font-family: "Nunito", "Segoe UI", sans-serif;
+}
+
+.bingo-shell {
+  width: min(1320px, calc(100% - 1.5rem));
+  margin: 0 auto 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* ── Shared controls ── */
+
+.bingo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bingo-muted {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.bingo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0 0.95rem;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-tile);
+  color: var(--text, #e8e8f2);
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.bingo-btn:hover:not(:disabled) {
+  background: #3a3125;
+  border-color: #6b5a40;
+}
+
+.bingo-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.bingo-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.bingo-btn--gold {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: #000;
+}
+
+.bingo-btn--gold:hover:not(:disabled) {
+  background: var(--gold-2, #ffec6e);
+  border-color: #000;
+}
+
+.bingo-btn--blue {
+  background: var(--select);
+  color: #0b1622;
+  border-color: #000;
+}
+
+.bingo-btn--blue:hover:not(:disabled) {
+  background: #7dbcff;
+  border-color: #000;
+}
+
+.bingo-btn--danger {
+  background: transparent;
+  color: #e3a68f;
+  border-color: #5a3a2e;
+}
+
+.bingo-btn--ghost {
+  background: transparent;
+  color: var(--muted);
+}
+
+.bingo-btn--small {
+  min-height: 36px;
+  padding: 0 0.7rem;
+  font-size: 0.85rem;
+}
+
+.bingo-grow {
+  flex: 1 1 auto;
+}
+
+.bingo-push {
+  margin-left: auto;
+}
+
+.bingo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg-tile-2);
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.bingo-pill.is-on {
+  background: #3d3220;
+  color: #ffe2a6;
+  border-color: var(--accent);
+}
+
+.bingo-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.bingo-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid #5a3a2e;
+  background: transparent;
+  color: #e3a68f;
+  cursor: pointer;
+}
+
+.bingo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.bingo-field > span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.bingo-input {
+  background: #0f0e12;
+  color: var(--text, #e8e8f2);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.bingo-input::placeholder {
+  color: #7d725f;
+}
+
+.bingo-input--title {
+  font-family: "Press Start 2P", monospace;
+  font-size: 1rem;
+  color: var(--parchment);
+  min-width: min(380px, 100%);
+}
+
+.bingo-input--short {
+  width: 120px;
+}
+
+.bingo-input--mono {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.bingo-app :is(button, input, select, a):focus-visible {
+  outline: 2px solid var(--select);
+  outline-offset: 2px;
+}
+
+/* ── Banner, header, toolbar ── */
+
+.bingo-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--accent);
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.bingo-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.bingo-head__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1 1 420px;
+}
+
+.bingo-title {
+  margin: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: clamp(16px, 2.4vw, 24px);
+  line-height: 1.5;
+  color: var(--parchment);
+  text-shadow: 2px 2px 0 #000;
+}
+
+.bingo-progress {
+  flex: 0 1 340px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bingo-progress__label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.bingo-progress__label strong {
+  color: var(--accent);
+}
+
+.bingo-progress__bar {
+  height: 14px;
+  background: #0a0908;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bingo-progress__bar > div {
+  height: 100%;
+  background: linear-gradient(180deg, #7fd36b, #3f8f2f);
+  transition: width 0.3s;
+}
+
+.bingo-saved-note {
+  font-size: 0.85rem;
+  color: #8fd47c;
+}
+
+.bingo-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(135, 206, 235, 0.1));
+  background: var(--bg-card, #18181f);
+}
+
+/* ── Layout: board + side panel (stacks on phones) ── */
+
+.bingo-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.bingo-board-wrap {
+  flex: 999 1 680px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.bingo-board {
+  min-width: 640px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  background: var(--bg-stone);
+  border: 2px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 0 0 1px #000;
+}
+
+/* ── Tiles ── */
+
+.bingo-tile {
+  position: relative;
+  border-radius: 8px;
+  border: 2px solid #332b21;
+  background: linear-gradient(180deg, #2d271f, var(--bg-tile-2));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  transition: filter 0.12s, box-shadow 0.2s;
+}
+
+.bingo-tile:hover {
+  filter: brightness(1.12);
+}
+
+.bingo-tile.is-done {
+  border-color: #6b5a2a;
+  background: linear-gradient(180deg, #34301d, #24200f);
+}
+
+.bingo-tile.is-line {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px #000, 0 0 18px rgba(255, 215, 0, 0.35);
+}
+
+.bingo-tile.is-selected {
+  border-color: var(--select);
+}
+
+.bingo-tile__main {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 176px;
+  padding: 10px 8px 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.bingo-tile__main:focus-visible {
+  outline: 2px solid var(--select);
+  outline-offset: -2px;
+}
+
+.bingo-tile__title {
+  min-height: 36px;
+  padding: 0 20px; /* keeps text clear of the tier dot and the done check */
+  display: flex;
+  align-items: center;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  line-height: 1.15;
+  color: var(--parchment);
+  text-shadow: 1px 1px 0 #000;
+  text-wrap: balance;
+}
+
+.bingo-tile__art {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bingo-tile__art img {
+  max-width: 84px;
+  max-height: 84px;
+  object-fit: contain;
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.6));
+  transition: transform 0.18s, opacity 0.2s;
+}
+
+.bingo-tile:hover .bingo-tile__art img {
+  transform: scale(1.07);
+}
+
+.bingo-tile.is-done .bingo-tile__art img {
+  opacity: 0.55;
+}
+
+.bingo-tile__hint {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  color: var(--muted);
+  text-align: center;
+}
+
+.bingo-tile__tier {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
+}
+
+.bingo-tile__check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 2px 0 #000;
+}
+
+.bingo-tile__counter {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.bingo-tile__counter .bingo-step:first-child {
+  margin-right: auto;
+}
+
+.bingo-tile__count {
+  font-family: "Press Start 2P", monospace;
+  font-size: 11px;
+  color: var(--text, #e8e8f2);
+  text-shadow: 1px 1px 0 #000;
+}
+
+.bingo-tile.is-done .bingo-tile__count {
+  color: var(--accent);
+}
+
+.bingo-step {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: #1a1611;
+  color: var(--text, #e8e8f2);
+  cursor: pointer;
+}
+
+.bingo-step:hover {
+  background: #3a3125;
+}
+
+.bingo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.7rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.bingo-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bingo-legend__line {
+  width: 14px;
+  height: 9px;
+  border-radius: 2px;
+  border: 2px solid var(--accent);
+}
+
+/* ── Side panel ── */
+
+.bingo-side {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bingo-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(135, 206, 235, 0.1));
+  background: var(--bg-card, #18181f);
+}
+
+.bingo-panel h3 {
+  margin: 0;
+  font-family: "Press Start 2P", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--accent);
+}
+
+.bingo-selected {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #0f0e12;
+}
+
+.bingo-selected img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.bingo-selected div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.bingo-picks {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.bingo-pick {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #0f0e12;
+  cursor: pointer;
+}
+
+.bingo-pick img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.bingo-pick:hover,
+.bingo-pick.is-on {
+  border-color: var(--accent);
+  background: #2f281f;
+}
+
+.bingo-versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bingo-versions li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #0f0e12;
+}
+
+.bingo-versions li.is-active {
+  border-color: var(--accent);
+}
+
+.bingo-versions__info {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.bingo-versions__info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bingo-credit {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft, #8888a8);
+}
+
+.bingo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 1100;
+  max-width: calc(100% - 2rem);
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: #14130f;
+  color: #ffe2a6;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 640px) {
+  .bingo-push {
+    margin-left: 0;
+  }
+}
