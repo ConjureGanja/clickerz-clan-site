@@ -12,14 +12,14 @@ const WINNERS_TTL = 5 * 60 * 1000;
  * @returns {string}
  */
 export function formatGained(value, isSkill) {
-  if (value === null || value === undefined) return "0";
   const n = Number(value);
+  const safe = Number.isFinite(n) ? n : 0;
   if (isSkill) {
-    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M xp";
-    if (n >= 1_000) return (n / 1_000).toFixed(1) + "k xp";
-    return n.toLocaleString() + " xp";
+    if (safe >= 1_000_000) return (safe / 1_000_000).toFixed(1) + "M xp";
+    if (safe >= 1_000) return (safe / 1_000).toFixed(1) + "k xp";
+    return safe.toLocaleString() + " xp";
   }
-  return n.toLocaleString() + " kc";
+  return safe.toLocaleString() + " kc";
 }
 
 /**
@@ -52,7 +52,10 @@ export function fetchCompetitionWinners(competition) {
       const res = await fetch(`${WOM_BASE}/competitions/${competition.id}`);
       if (!res.ok) throw new Error(`WOM competition ${competition.id} ${res.status}`);
       const detail = await res.json();
-      return { comp: competition, participations: detail.participations ?? [] };
+      return {
+        comp: competition,
+        participations: Array.isArray(detail?.participations) ? detail.participations : [],
+      };
     },
   ).catch(() => ({ comp: competition, participations: [] }));
 }

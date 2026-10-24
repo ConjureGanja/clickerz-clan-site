@@ -52,6 +52,8 @@ Use these settings in Cloudflare Pages:
 
 The Vite config uses a relative `base` path so built assets resolve correctly in static hosting environments.
 
+`public/_redirects` sends direct visits to `/bingo`, `/poh-planner`, `/guides/:slug`, and the other app routes back to `index.html`, so a refresh does not 404. `/api/*` is left to the Pages Function. `public/_headers` adds the security headers, including a content security policy that still allows the Google fonts, Wise Old Man, RuneProfile, Discord widget, and SoundCloud player. The offline POH file keeps an inline script, so `/poh-planner.html` uses its own policy.
+
 ### Shared clicking-game leaderboard
 
 The clicking game now uses a Cloudflare Pages Function at `/api/clicking-leaderboard`.

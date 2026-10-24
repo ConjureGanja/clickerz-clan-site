@@ -23,6 +23,18 @@ const GROUPS = [
   { id: "dungeon", label: "Basement" },
 ];
 
+const MAX_IMPORT_BYTES = 512 * 1024;
+
+function readDragPayload(dataTransfer) {
+  const plain = dataTransfer.getData("text/plain");
+  const uid = dataTransfer.getData("text/poh-uid") || (plain.startsWith("uid:") ? plain.slice(4) : "");
+  const roomId = dataTransfer.getData("text/poh-room") || (plain.startsWith("room:") ? plain.slice(5) : "");
+  return {
+    uid: uid.slice(0, 64),
+    roomId: roomId.slice(0, 64),
+  };
+}
+
 const FLOOR_RULES = {
   ground: "Ground floor: indoor and outdoor rooms. A staircase in a skill hall or quest hall is what lets you start the floor above. A dungeon entrance, built as the centrepiece of a garden or formal garden, is what lets you start the dungeon.",
   upper: "Upper floor: put the first room on top of a skill hall or quest hall that already has a staircase. Further rooms have to touch that upper floor, and they can only sit on indoor rooms — not on a garden, formal garden, superior garden, or outdoor menagerie.",
@@ -54,25 +66,38 @@ export default function PohPlannerApp() {
   const [selectedUid, setSelectedUid] = useState("ch");
   const [armedId, setArmedId] = useState(null);
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("Drag a room onto the grid, or select one and click a tile.");
+  const [status, setStatus] = useState("Drag a room onto the grid, or select one and click a tile. On a touch screen, select a placed room and tap an empty tile to move it.");
   const [hoverCell, setHoverCell] = useState(null);
   const fileRef = useRef(null);
+  const storeRef = useRef(store);
   const layout = store.current;
   const floorId = ["ground", "upper", "dungeon"].includes(layout.activeFloor) ? layout.activeFloor : "ground";
   const ground = layout.floors.ground;
   const placed = layout.floors[floorId];
 
   useEffect(() => {
+    const flush = () => {
+      writeStore(storeRef.current);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, []);
+
+  useEffect(() => {
+    storeRef.current = store;
     let active = true;
-    try {
-      writeStore(store);
-    } catch {
-      Promise.resolve().then(() => {
-        if (active) setStatus("Changes are only in this session; browser storage is unavailable.");
-      });
-    }
+    const timeoutId = window.setTimeout(() => {
+      if (!active) return;
+      if (!writeStore(store)) {
+        setStatus("Changes are only in this session; browser storage is unavailable.");
+      }
+    }, 200);
     return () => {
       active = false;
+      window.clearTimeout(timeoutId);
     };
   }, [store]);
 
@@ -214,7 +239,7 @@ export default function PohPlannerApp() {
   useEffect(() => {
     function onKey(event) {
       const tag = event.target?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || event.target?.isContentEditable) return;
       const current = actions.current;
       if (!current.selected) return;
       if (event.key === "r" || event.key === "R") {
@@ -238,8 +263,7 @@ export default function PohPlannerApp() {
   function onDropCell(event, x, y) {
     event.preventDefault();
     setHoverCell(null);
-    const uid = event.dataTransfer.getData("text/poh-uid");
-    const roomId = event.dataTransfer.getData("text/poh-room");
+    const { uid, roomId } = readDragPayload(event.dataTransfer);
     if (uid) moveRoom(uid, x, y);
     else if (roomId && ROOM_BY_ID[roomId]) placeRoom(roomId, x, y);
   }
@@ -250,8 +274,21 @@ export default function PohPlannerApp() {
       placeRoom(armedId, x, y);
       return;
     }
-    setSelectedUid(occupied ? occupied.uid : null);
-    if (occupied && armedId) setStatus("That tile is full. The room there is selected.");
+    if (occupied) {
+      if (!armedId && selectedUid === occupied.uid) {
+        setSelectedUid(null);
+        setStatus("Room deselected.");
+        return;
+      }
+      setSelectedUid(occupied.uid);
+      if (armedId) setStatus("That tile is full. The room there is selected.");
+      return;
+    }
+    if (selected && !armedId) {
+      moveRoom(selected.uid, x, y);
+      return;
+    }
+    setSelectedUid(null);
   }
 
   function loadPreset() {
@@ -313,6 +350,10 @@ export default function PohPlannerApp() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) {
+      setStatus("That file is too large to import.");
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -438,6 +479,7 @@ export default function PohPlannerApp() {
                           setStatus(`Selected ${room.name}. Click an empty tile to place it.`);
                         }}
                         onDragStart={(event) => {
+                          event.dataTransfer.setData("text/plain", `room:${room.id}`);
                           event.dataTransfer.setData("text/poh-room", room.id);
                           event.dataTransfer.effectAllowed = "copy";
                           setArmedId(room.id);
@@ -486,7 +528,8 @@ export default function PohPlannerApp() {
                       ].filter(Boolean).join(" ")}
                       onDragOver={(event) => {
                         event.preventDefault();
-                        setHoverCell(`${x},${y}`);
+                        const key = `${x},${y}`;
+                        setHoverCell((current) => (current === key ? current : key));
                       }}
                       onDragLeave={() => setHoverCell((current) => (current === `${x},${y}` ? null : current))}
                       onDrop={(event) => onDropCell(event, x, y)}
@@ -506,6 +549,7 @@ export default function PohPlannerApp() {
                       draggable={Boolean(piece)}
                       onDragStart={(event) => {
                         if (!piece) return;
+                        event.dataTransfer.setData("text/plain", `uid:${piece.uid}`);
                         event.dataTransfer.setData("text/poh-uid", piece.uid);
                         event.dataTransfer.effectAllowed = "move";
                         setSelectedUid(piece.uid);
@@ -617,7 +661,7 @@ export default function PohPlannerApp() {
               </section>
 
               <div className="poh-legend">
-                <div style={{ display: "flex", gap: "1rem" }}>
+                <div className="poh-legend-layout">
                   <div style={{ flex: 1 }}>
                     <h3>Legend</h3>
                     <LegendRow color="var(--poh-pool)" label="Ornate pool" />
@@ -640,7 +684,7 @@ export default function PohPlannerApp() {
                   <li>Prayer: spawn, south into the chapel. The gilded altar sits on the west wall, sideways to that door.</li>
                 </ol>
                 <p className="poh-help">
-                  Hosidius house. The build cost adds the room shells and the furniture selected in each hotspot. Press R to rotate, Delete to remove, and the arrow keys to move the selected room. Upstairs starts on a built staircase. The dungeon starts under a dungeon entrance.
+                  Hosidius house. The build cost adds the room shells and the furniture selected in each hotspot. Press R to rotate, Delete to remove, and the arrow keys to move the selected room. On a touch screen, select a room and tap an empty tile to move it. Upstairs starts on a built staircase. The dungeon starts under a dungeon entrance.
                   {" "}
                   <a href="/poh-planner.html">Open the offline copy</a> if you want one file with no site around it.
                 </p>

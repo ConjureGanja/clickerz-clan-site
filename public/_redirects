@@ -1,0 +1,8 @@
+/events             /index.html  200
+/bingo              /index.html  200
+/leaderboards       /index.html  200
+/clicking-game      /index.html  200
+/guides             /index.html  200
+/guides/*           /index.html  200
+/poh-planner        /index.html  200
+/stats              /index.html  200

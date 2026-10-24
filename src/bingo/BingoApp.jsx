@@ -29,6 +29,7 @@ import {
   decodeCard,
   defaultCard,
   encodeCard,
+  extractShareCode,
   isDone,
   makeTile,
   randomTaskIds,
@@ -56,8 +57,9 @@ function initialStore() {
 // We ask first instead of loading straight away, so a link never silently replaces your card.
 function initialSharedCard() {
   try {
-    const match = window.location.hash.match(/card=([A-Za-z0-9_-]+)/);
-    return match ? decodeCard(match[1]) : null;
+    if (!window.location.hash.includes("card=")) return null;
+    const code = extractShareCode(window.location.hash);
+    return code ? decodeCard(code) : null;
   } catch {
     return null;
   }
@@ -100,25 +102,37 @@ export default function BingoApp() {
   const [toast, setToast] = useState("");
   const toastTimer = useRef(null);
   const storageWarningShown = useRef(false);
+  const storeRef = useRef(store);
 
   const { card, versions, activeVersion } = store;
 
-  // Persist after every change. If storage is blocked, tell the player once
-  // (deferred a tick, so we never set state synchronously inside the effect).
+  // Persist after changes settle. If storage is blocked, tell the player once.
+  // pagehide still flushes the latest card if the tab closes mid-edit.
   useEffect(() => {
-    let active = true;
-    if (!writeStore(store) && !storageWarningShown.current) {
-      Promise.resolve().then(() => {
-        if (active && !storageWarningShown.current) {
-          storageWarningShown.current = true;
-          setToast("Browser storage is off — changes last only while this page stays open.");
-        }
-      });
-    }
-    return () => { active = false; };
-  }, [store]);
+    const flush = () => {
+      writeStore(storeRef.current);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+      clearTimeout(toastTimer.current);
+    };
+  }, []);
 
-  useEffect(() => () => clearTimeout(toastTimer.current), []);
+  useEffect(() => {
+    storeRef.current = store;
+    let active = true;
+    const timeoutId = window.setTimeout(() => {
+      if (!active || writeStore(store) || storageWarningShown.current) return;
+      storageWarningShown.current = true;
+      setToast("Browser storage is off — changes last only while this page stays open.");
+    }, 200);
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [store]);
 
   function flash(message) {
     setToast(message);
@@ -201,7 +215,11 @@ export default function BingoApp() {
 
   function saveVersion() {
     const version = makeVersion(saveName.trim() || card.name, card);
-    setStore((prev) => ({ ...prev, versions: [...prev.versions, version], activeVersion: version.id }));
+    setStore((prev) => ({
+      ...prev,
+      versions: [...prev.versions, version].slice(-24),
+      activeVersion: version.id,
+    }));
     setSaveName("");
     flash(`Saved “${version.name}”. It keeps updating as you play.`);
   }
@@ -231,7 +249,7 @@ export default function BingoApp() {
 
   function importFromCode() {
     try {
-      const imported = decodeCard(importCode.includes("card=") ? importCode.split("card=")[1] : importCode);
+      const imported = decodeCard(extractShareCode(importCode));
       replaceCard(imported);
       setImportCode("");
       flash(`Loaded “${imported.name}”. Save it to keep a copy.`);

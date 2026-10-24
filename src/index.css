@@ -68,6 +68,11 @@ button {
   font: inherit;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 code {
   background: rgba(135, 206, 235, 0.08);
   color: var(--sky);
@@ -79,6 +84,18 @@ code {
 .app-shell {
   min-height: 100vh;
   background: var(--bg);
+}
+
+main {
+  min-width: 0;
+}
+
+.page-fallback {
+  min-height: 40vh;
+  display: grid;
+  place-items: center;
+  color: var(--text-soft);
+  font-weight: 800;
 }
 
 .container {
@@ -182,7 +199,11 @@ code {
   background: transparent;
   display: inline-flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0.5rem;
   cursor: pointer;
 }
@@ -869,7 +890,7 @@ code {
   right: 1rem;
   top: 50%;
   z-index: 900;
-  width: 162px;
+  width: min(240px, calc(100vw - 1.5rem));
   padding: 0.9rem;
   border-radius: 18px;
   background: rgba(24, 24, 31, 0.92);
@@ -935,12 +956,26 @@ code {
   background: rgba(135, 206, 235, 0.07);
   color: var(--sky);
   border-radius: 7px;
-  padding: 0.25rem 0.4rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.35rem 0.55rem;
   cursor: pointer;
   font-size: 12px;
+  font-weight: 800;
   line-height: 1;
   transition: background 0.2s ease;
   flex-shrink: 0;
+}
+
+.clicker-widget__frame {
+  position: absolute;
+  width: 180px;
+  height: 20px;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+  left: 0;
+  bottom: 0;
 }
 
 .clicker-widget__btn:hover {
@@ -1092,6 +1127,7 @@ code {
 
 .clicking-name-input {
   width: 100%;
+  min-height: 44px;
   margin: 0.5rem 0 1rem;
   padding: 0.9rem 1rem;
   border-radius: 14px;
@@ -1136,6 +1172,7 @@ code {
   border-radius: 999px;
   cursor: pointer;
   pointer-events: auto;
+  touch-action: manipulation;
   user-select: none;
   background: rgba(24, 24, 31, 0.84);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
@@ -1442,7 +1479,43 @@ code {
   }
 }
 
+@keyframes clickingFloaterFade {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .clicking-floater {
+    animation-name: clickingFloaterFade;
+    bottom: auto;
+    top: 18%;
+  }
+}
+
 /* ── Responsive ──────────────────────────────────── */
+
+@media (min-width: 901px) and (max-width: 1560px) {
+  main {
+    padding-right: 17rem;
+  }
+}
+
+@media (max-width: 1120px) {
+  .nav-links.desktop-only {
+    display: none;
+  }
+
+  .mobile-menu-button.mobile-only,
+  .mobile-menu.mobile-only {
+    display: block;
+  }
+
+  .mobile-menu-button.mobile-only {
+    display: inline-flex;
+  }
+}
 
 @media (max-width: 900px) {
   .values-grid,
@@ -1450,12 +1523,58 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .app-shell {
+    padding-bottom: 9.5rem;
+  }
+
   .clicker-widget {
+    left: 0.75rem;
     right: 0.75rem;
     top: auto;
-    bottom: 1rem;
-    width: 162px;
+    bottom: 0.75rem;
+    width: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.45rem 0.75rem;
     transform: none;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .clicker-widget__scorebox {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .clicker-widget__score {
+    margin-top: 0;
+    margin-left: auto;
+    font-size: 13px;
+  }
+
+  .clicker-widget__link {
+    margin-top: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .clicker-widget__divider {
+    display: none;
+  }
+
+  .clicker-widget__music {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .clicker-widget__music-label {
+    margin-bottom: 0;
   }
 
   .clicking-game-layout {
@@ -1952,5 +2071,24 @@ code {
 
   .guide-post-footer .button {
     width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-logo-text {
+    font-size: 10px;
+  }
+
+  .nav-logo-img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .fun-stats-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .fun-stat-card__value {
+    font-size: 16px;
   }
 }

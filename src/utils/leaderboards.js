@@ -118,7 +118,7 @@ export function describeClanActivity(activity) {
       return {
         icon: "💰",
         title: itemName,
-        detail: `Valued around ${formatCompactNumber(activity.data.value, " gp")}`,
+        detail: `Valued around ${formatCompactNumber(activity.data?.value, " gp")}`,
       };
     case "quest_completed":
       return {
@@ -141,8 +141,8 @@ export function describeClanActivity(activity) {
     case "xp_milestone":
       return {
         icon: "✨",
-        title: `${formatMetricName(activity.data.name)} milestone`,
-        detail: `${formatCompactNumber(activity.data.xp, " xp")} total XP`,
+        title: `${formatMetricName(activity.data?.name)} milestone`,
+        detail: `${formatCompactNumber(activity.data?.xp, " xp")} total XP`,
       };
     case "new_item_obtained":
       return {
@@ -342,24 +342,24 @@ async function _fetchLeaderboardSnapshot() {
       overallResult.status === "fulfilled" ? overallResult.value : [],
       (entry, index) => ({
         rank: index + 1,
-        name: entry.player.displayName,
-        value: `${(entry.data.level ?? 0).toLocaleString()} lvl`,
+        name: entry?.player?.displayName || "Unknown",
+        value: `${(entry?.data?.level ?? 0).toLocaleString()} lvl`,
       }),
     ),
     ehb: toRows(
       ehbResult.status === "fulfilled" ? ehbResult.value : [],
       (entry, index) => ({
         rank: index + 1,
-        name: entry.player.displayName,
-        value: `${Math.round(entry.data.value ?? 0).toLocaleString()} EHB`,
+        name: entry?.player?.displayName || "Unknown",
+        value: `${Math.round(entry?.data?.value ?? 0).toLocaleString()} EHB`,
       }),
     ),
     ehp: toRows(
       ehpResult.status === "fulfilled" ? ehpResult.value : [],
       (entry, index) => ({
         rank: index + 1,
-        name: entry.player.displayName,
-        value: `${Math.round(entry.data.value ?? 0).toLocaleString()} EHP`,
+        name: entry?.player?.displayName || "Unknown",
+        value: `${Math.round(entry?.data?.value ?? 0).toLocaleString()} EHP`,
       }),
     ),
   };
@@ -367,16 +367,16 @@ async function _fetchLeaderboardSnapshot() {
   const mapGainers = (result, metric) =>
     toRows(result.status === "fulfilled" ? result.value : [], (entry, index) => ({
       rank: index + 1,
-      name: entry.player.displayName,
-      rawGained: Number(entry.data.gained ?? 0),
+      name: entry?.player?.displayName || "Unknown",
+      rawGained: Number(entry?.data?.gained ?? 0) || 0,
       change:
         metric === "overall"
-          ? `+${formatCompactNumber(entry.data.gained, " xp")}`
-          : `+${Number(entry.data.gained ?? 0).toFixed(1)} EHB`,
+          ? `+${formatCompactNumber(entry?.data?.gained, " xp")}`
+          : `+${Number(entry?.data?.gained ?? 0).toFixed(1)} EHB`,
       value:
         metric === "overall"
-          ? formatCompactNumber(entry.data.gained, " xp")
-          : `${Number(entry.data.gained ?? 0).toFixed(1)} EHB`,
+          ? formatCompactNumber(entry?.data?.gained, " xp")
+          : `${Number(entry?.data?.gained ?? 0).toFixed(1)} EHB`,
     }));
 
   const gainers = {
@@ -416,7 +416,7 @@ async function _fetchLeaderboardSnapshot() {
 
   const biggestDrop = clanActivities
     .filter((activity) => activity.type === "valuable_drop")
-    .sort((left, right) => (right.data.value ?? 0) - (left.data.value ?? 0))[0] ?? null;
+    .sort((left, right) => (right.data?.value ?? 0) - (left.data?.value ?? 0))[0] ?? null;
 
   const totalWeeklyXp = gainers.weekXP.reduce((sum, row) => sum + (row.rawGained ?? 0), 0);
 

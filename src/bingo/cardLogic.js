@@ -6,7 +6,7 @@
 // rolled without touching the combat code, and each part is easy to test.
 // ─────────────────────────────────────────────────────────────
 
-import { DEFAULT_TARGETS, DEFAULT_TASK_IDS, TASKS, TASK_BY_ID } from "./tasks";
+import { DEFAULT_TARGETS, DEFAULT_TASK_IDS, TASKS, TASK_BY_ID } from "./tasks.js";
 
 export const ALL_TIERS = { low: true, mid: true, high: true };
 
@@ -101,6 +101,19 @@ function fromBase64Url(code) {
   return new TextDecoder().decode(Uint8Array.from(binary, (ch) => ch.charCodeAt(0)));
 }
 
+// A 7×5 card with 40/60-character non-ASCII titles and hints encodes to ~16k
+// characters. 65,536 leaves room for that payload without accepting huge pastes.
+export const MAX_SHARE_CODE_LENGTH = 65536;
+
+export function extractShareCode(input) {
+  const text = String(input || "").trim();
+  if (!text) return "";
+  const labeled = text.match(/card=([A-Za-z0-9_-]+)/);
+  if (labeled && labeled[1].length <= MAX_SHARE_CODE_LENGTH) return labeled[1];
+  if (/^[A-Za-z0-9_-]+$/.test(text) && text.length <= MAX_SHARE_CODE_LENGTH) return text;
+  return "";
+}
+
 export function encodeCard(card) {
   const compact = {
     n: card.name,
@@ -111,12 +124,7 @@ export function encodeCard(card) {
   return toBase64Url(JSON.stringify(compact));
 }
 
-/**
- * Decode a share code. Everything is clamped and validated, because a code
- * is untrusted text someone pasted — never assume it's well formed.
- */
-export function decodeCard(code) {
-  const data = JSON.parse(fromBase64Url(code));
+function cardFromCompact(data) {
   if (!data || !Array.isArray(data.t)) throw new Error("Not a bingo card code");
   const cols = clampInt(data.c, 2, 8);
   const rows = clampInt(data.r, 2, 8);
@@ -136,11 +144,31 @@ export function decodeCard(code) {
   return tiles.length < cols * rows ? resizeCard({ ...card, cols: 0, rows: 0 }, cols, rows, ALL_TIERS) : card;
 }
 
-/** Keep a stored or decoded card in a shape the UI can trust. */
+/**
+ * Decode a share code. Everything is clamped and validated, because a code
+ * is untrusted text someone pasted — never assume it's well formed.
+ */
+export function decodeCard(code) {
+  if (typeof code !== "string" || code.length === 0 || code.length > MAX_SHARE_CODE_LENGTH) {
+    throw new Error("Not a bingo card code");
+  }
+  return cardFromCompact(JSON.parse(fromBase64Url(code)));
+}
+
+/**
+ * Keep a stored card in a shape the UI can trust.
+ * This does not encode the card, so a valid local card is kept even when its
+ * share string would be too long to paste.
+ */
 export function normalizeCard(card) {
   if (!card || !Array.isArray(card.tiles) || !card.cols || !card.rows) return null;
   try {
-    return decodeCard(encodeCard(card));
+    return cardFromCompact({
+      n: card.name,
+      c: card.cols,
+      r: card.rows,
+      t: card.tiles.map((tile) => [tile?.taskId, tile?.count, tile?.target, tile?.title || "", tile?.hint || ""]),
+    });
   } catch {
     return null;
   }
