@@ -890,7 +890,7 @@ main {
   right: 1rem;
   top: 50%;
   z-index: 900;
-  width: 162px;
+  width: min(240px, calc(100vw - 1.5rem));
   padding: 0.9rem;
   border-radius: 18px;
   background: rgba(24, 24, 31, 0.92);
@@ -956,12 +956,26 @@ main {
   background: rgba(135, 206, 235, 0.07);
   color: var(--sky);
   border-radius: 7px;
-  padding: 0.25rem 0.4rem;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.35rem 0.55rem;
   cursor: pointer;
   font-size: 12px;
+  font-weight: 800;
   line-height: 1;
   transition: background 0.2s ease;
   flex-shrink: 0;
+}
+
+.clicker-widget__frame {
+  position: absolute;
+  width: 180px;
+  height: 20px;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+  left: 0;
+  bottom: 0;
 }
 
 .clicker-widget__btn:hover {
@@ -1482,9 +1496,9 @@ main {
 
 /* ── Responsive ──────────────────────────────────── */
 
-@media (min-width: 901px) and (max-width: 1500px) {
+@media (min-width: 901px) and (max-width: 1560px) {
   main {
-    padding-right: 12rem;
+    padding-right: 17rem;
   }
 }
 
@@ -1510,7 +1524,7 @@ main {
   }
 
   .app-shell {
-    padding-bottom: 5.25rem;
+    padding-bottom: 9.5rem;
   }
 
   .clicker-widget {
@@ -1519,11 +1533,19 @@ main {
     top: auto;
     bottom: 0.75rem;
     width: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.45rem 0.75rem;
+    transform: none;
+    padding: 0.7rem 0.9rem;
+  }
+
+  .clicker-widget__scorebox {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    transform: none;
-    padding: 0.7rem 0.9rem;
+    min-width: 0;
   }
 
   .clicker-widget__score {
@@ -1537,6 +1559,22 @@ main {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
+  }
+
+  .clicker-widget__divider {
+    display: none;
+  }
+
+  .clicker-widget__music {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .clicker-widget__music-label {
+    margin-bottom: 0;
   }
 
   .clicking-game-layout {

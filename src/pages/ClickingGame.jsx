@@ -8,9 +8,6 @@ import {
 } from "../utils/clickingGame";
 
 const SOUNDCLOUD_PROFILE_URL = "https://soundcloud.com/clickerz-cc";
-const SOUNDCLOUD_EMBED_SRC = `https://w.soundcloud.com/player/?url=${encodeURIComponent(
-  SOUNDCLOUD_PROFILE_URL,
-)}&color=%23ffd700&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false`;
 
 const FLOATING_EMOJIS = [
   { emoji: "🌿", value: 10 },
@@ -56,6 +53,14 @@ export default function ClickingGame() {
   const [lastBonus, setLastBonus] = useState(null);
 
   const topScore = useMemo(() => leaderboard[0]?.score ?? 0, [leaderboard]);
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = "Our Soundcloud — Clickerz.CC";
+    return () => {
+      document.title = previousTitle;
+    };
+  }, []);
 
   useEffect(() => {
     let intervalId = null;
@@ -149,19 +154,20 @@ export default function ClickingGame() {
         <div className="hero-orb hero-orb--one" aria-hidden="true" />
         <div className="hero-orb hero-orb--two" aria-hidden="true" />
         <div className="container hero-content">
-          <SectionBadge tone="gold">Clickerz Clicking Game</SectionBadge>
+          <SectionBadge tone="gold">Our Soundcloud</SectionBadge>
           <h1 className="hero-title">
-            Clickerz
+            Our
             <br />
-            <span>Clicking Game</span>
+            <span>Soundcloud</span>
           </h1>
           <p className="hero-subtitle">
             Every site click counts. Catch the floating emojis for bonus points, but dodge the traps.
+            The clan SoundCloud starts with your first click, tap, or scroll, and you can pause or mute it from the widget.
           </p>
         </div>
       </section>
 
-      <section className="page-section clicking-game-arena" aria-label="Clickerz Clicking Game arena">
+      <section className="page-section clicking-game-arena" aria-label="Our Soundcloud">
         <div className="container clicking-game-layout">
           <div className="clicking-score-card">
             <div className="clicking-score-card__label">Your clicks</div>
@@ -178,18 +184,11 @@ export default function ClickingGame() {
 
           <div className="clicking-side-panel">
             <div className="clicking-panel-card">
-              <h2>Clan Tracks</h2>
-              <p>Vibe out to tracks from the Clickerz SoundCloud while you click.</p>
-              <iframe
-                title="Clickerz SoundCloud player"
-                className="clicking-soundcloud"
-                width="100%"
-                height="300"
-                scrolling="no"
-                frameBorder="no"
-                allow="autoplay"
-                src={SOUNDCLOUD_EMBED_SRC}
-              />
+              <h2>Our Soundcloud</h2>
+              <p>
+                The player sits with the click counter on every page. Pause or mute it there.
+                This page is for the clicking game and the shared score list.
+              </p>
               <a
                 className="button button--secondary"
                 href={SOUNDCLOUD_PROFILE_URL}
@@ -225,7 +224,7 @@ export default function ClickingGame() {
         <div className="container clicking-leaderboard-wrap">
           <div className="section-header">
             <SectionBadge tone="sky">Separate leaderboard</SectionBadge>
-            <h2 className="section-title">Clickerz Clicking Game Leaders</h2>
+            <h2 className="section-title">Click Leaders</h2>
             <p className="section-subtitle">
               Shared across visitors and separate from Wise Old Man or RuneProfile leaderboards.
             </p>
