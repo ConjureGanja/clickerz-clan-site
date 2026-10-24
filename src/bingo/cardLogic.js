@@ -6,7 +6,7 @@
 // rolled without touching the combat code, and each part is easy to test.
 // ─────────────────────────────────────────────────────────────
 
-import { DEFAULT_TARGETS, DEFAULT_TASK_IDS, TASKS, TASK_BY_ID } from "./tasks";
+import { DEFAULT_TARGETS, DEFAULT_TASK_IDS, TASKS, TASK_BY_ID } from "./tasks.js";
 
 export const ALL_TIERS = { low: true, mid: true, high: true };
 
@@ -101,6 +101,17 @@ function fromBase64Url(code) {
   return new TextDecoder().decode(Uint8Array.from(binary, (ch) => ch.charCodeAt(0)));
 }
 
+const MAX_SHARE_CODE_LENGTH = 12000;
+
+export function extractShareCode(input) {
+  const text = String(input || "").trim();
+  if (!text) return "";
+  const labeled = text.match(/card=([A-Za-z0-9_-]{1,12000})/);
+  if (labeled) return labeled[1];
+  if (/^[A-Za-z0-9_-]{1,12000}$/.test(text)) return text;
+  return "";
+}
+
 export function encodeCard(card) {
   const compact = {
     n: card.name,
@@ -116,6 +127,9 @@ export function encodeCard(card) {
  * is untrusted text someone pasted — never assume it's well formed.
  */
 export function decodeCard(code) {
+  if (typeof code !== "string" || code.length === 0 || code.length > MAX_SHARE_CODE_LENGTH) {
+    throw new Error("Not a bingo card code");
+  }
   const data = JSON.parse(fromBase64Url(code));
   if (!data || !Array.isArray(data.t)) throw new Error("Not a bingo card code");
   const cols = clampInt(data.c, 2, 8);

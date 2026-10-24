@@ -55,9 +55,18 @@ const WOM_SKILLS = new Set([
 ]);
 
 function formatMetricName(metric) {
-  return metric
+  return String(metric || "")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function hiscoreRows(entries, formatValue) {
+  if (!Array.isArray(entries)) return [];
+  return entries.map((entry, index) => ({
+    rank: index + 1,
+    name: entry?.player?.displayName || "Unknown",
+    value: formatValue(entry),
+  }));
 }
 
 function formatCompDate(isoString) {
@@ -299,7 +308,7 @@ function PreviousWinnersRow({ sotwWinners, botwWinners }) {
 
   const renderMini = (winners, isSkill) => {
     if (!winners) return null;
-    const top3 = (winners.participations ?? []).slice(0, 3);
+    const top3 = (Array.isArray(winners.participations) ? winners.participations : []).slice(0, 3);
     const comp = winners.comp;
     return (
       <div className={`winner-card ${isSkill ? "winner-card--sky" : "winner-card--gold"}`}>
@@ -307,7 +316,7 @@ function PreviousWinnersRow({ sotwWinners, botwWinners }) {
           <span className="winner-card__icon">{isSkill ? "🎒" : "🐉"}</span>
           <div>
             <div className="winner-card__type">{isSkill ? "SOTW" : "BOTW"}</div>
-            <div className="winner-card__metric">{formatMetricName(comp.metric)}</div>
+            <div className="winner-card__metric">{formatMetricName(comp?.metric)}</div>
           </div>
           <span className="event-status event-status--finished">🏁 Finished</span>
         </div>
@@ -382,7 +391,7 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
       icon: "🎒",
       toneClass: "event-card--sky",
       title: sotwComp.title || `SOTW — ${formatMetricName(sotwComp.metric)}`,
-      subtitle: `${sotwComp.participantCount} participants competing for the most ${formatMetricName(sotwComp.metric)} XP this week.`,
+      subtitle: `${sotwComp.participantCount ?? 0} participants competing for the most ${formatMetricName(sotwComp.metric)} XP this week.`,
       startDate: formatCompDate(sotwComp.startsAt),
       endDate: formatCompDate(sotwComp.endsAt),
       prize: WEEKLY_EVENTS.sotw.prize,
@@ -414,7 +423,7 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
       icon: "🐉",
       toneClass: "event-card--gold",
       title: botwComp.title || `BOTW — ${formatMetricName(botwComp.metric)}`,
-      subtitle: `${botwComp.participantCount} participants competing for the highest ${formatMetricName(botwComp.metric)} kill count this week.`,
+      subtitle: `${botwComp.participantCount ?? 0} participants competing for the highest ${formatMetricName(botwComp.metric)} kill count this week.`,
       startDate: formatCompDate(botwComp.startsAt),
       endDate: formatCompDate(botwComp.endsAt),
       prize: WEEKLY_EVENTS.botw.prize,
@@ -515,6 +524,7 @@ function EventsSection({ womComps, sotwWinners, botwWinners }) {
 
 const TOP_N = 10;
 const WOM_HISCORES_PAGE_SIZE = 100;
+const MAX_HISCORE_PAGES = 20;
 
 function LeaderboardSection({ leaderboard }) {
   const [activeTab, setActiveTab] = useState("skills");
@@ -738,15 +748,22 @@ export default function Home() {
 
   // Discord widget
   useEffect(() => {
+    let active = true;
     cachedFetch(`discord:widget:${DISCORD_GUILD_ID}`, TTL_DISCORD, () =>
       fetchJsonOk(`https://discord.com/api/guilds/${DISCORD_GUILD_ID}/widget.json`),
     )
-      .then((d) => setDiscordOnline(d.presence_count))
+      .then((d) => {
+        if (active) setDiscordOnline(Number.isFinite(Number(d?.presence_count)) ? Number(d.presence_count) : null);
+      })
       .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   // WOM stats
   useEffect(() => {
+    let active = true;
     const loadHiscoresPage = (metric, limit, offset = 0) => cachedFetch(
       `wom:hiscores:${WOM_GROUP_ID}:${metric}:${limit}:${offset}`,
       TTL_WOM_STATS,
@@ -760,7 +777,7 @@ export default function Home() {
       const pages = [];
       let offset = 0;
 
-      while (true) {
+      for (let pageIndex = 0; pageIndex < MAX_HISCORE_PAGES; pageIndex += 1) {
         const page = await loadHiscoresPage(metric, WOM_HISCORES_PAGE_SIZE, offset).catch((error) => {
           if (pages.length > 0) {
             return [];
@@ -768,7 +785,7 @@ export default function Home() {
           throw error;
         });
 
-        if (page.length === 0) {
+        if (!Array.isArray(page) || page.length === 0) {
           return pages;
         }
 
@@ -780,6 +797,8 @@ export default function Home() {
 
         offset += WOM_HISCORES_PAGE_SIZE;
       }
+
+      return pages;
     };
 
     const loadLeaderboardMetric = (metric, memberCount) => {
@@ -796,7 +815,7 @@ export default function Home() {
       }
 
       const pageOffsets = Array.from(
-        { length: Math.ceil(entryCount / WOM_HISCORES_PAGE_SIZE) },
+        { length: Math.min(MAX_HISCORE_PAGES, Math.ceil(entryCount / WOM_HISCORES_PAGE_SIZE)) },
         (_, pageIndex) => pageIndex * WOM_HISCORES_PAGE_SIZE,
       );
 
@@ -809,16 +828,13 @@ export default function Home() {
       loadLeaderboardMetric("overall", memberCount),
       loadLeaderboardMetric("ehb", memberCount),
     ]).then(([skillsResult, bossesResult]) => {
-      const skills = skillsResult.status === "fulfilled" ? skillsResult.value.map((entry, i) => ({
-        rank: i + 1,
-        name: entry.player.displayName,
-        value: (entry.data.level ?? 0).toLocaleString(),
-      })) : [];
-      const bosses = bossesResult.status === "fulfilled" ? bossesResult.value.map((entry, i) => ({
-        rank: i + 1,
-        name: entry.player.displayName,
-        value: `${Math.round(entry.data.value ?? 0).toLocaleString()} EHB`,
-      })) : [];
+      const skills = skillsResult.status === "fulfilled"
+        ? hiscoreRows(skillsResult.value, (entry) => (entry?.data?.level ?? 0).toLocaleString())
+        : [];
+      const bosses = bossesResult.status === "fulfilled"
+        ? hiscoreRows(bossesResult.value, (entry) => `${Math.round(entry?.data?.value ?? 0).toLocaleString()} EHB`)
+        : [];
+      if (!active) return;
       setLeaderboard({ data: { skills, bosses }, loading: false, error: false });
     });
 
@@ -826,14 +842,19 @@ export default function Home() {
       fetchJsonOk(`https://api.wiseoldman.net/v2/groups/${WOM_GROUP_ID}`),
     )
       .then((g) => {
-        setWomMemberCount(g.memberCount);
-        return loadLeaderboard(g.memberCount);
+        if (!active) return null;
+        const memberCount = Number(g?.memberCount);
+        setWomMemberCount(Number.isFinite(memberCount) ? memberCount : null);
+        return loadLeaderboard(Number.isFinite(memberCount) ? memberCount : null);
       })
-      .catch(() => loadLeaderboard());
+      .catch(() => {
+        if (active) return loadLeaderboard();
+        return null;
+      });
 
     fetchGroupCompetitions()
       .then(comps => {
-        if (!Array.isArray(comps)) return;
+        if (!active || !Array.isArray(comps)) return;
         setWomComps(comps);
 
         const finished = comps
@@ -842,10 +863,14 @@ export default function Home() {
         const lastSotw = finished.find(c => WOM_SKILLS.has(c.metric));
         const lastBotw = finished.find(c => !WOM_SKILLS.has(c.metric));
 
-        if (lastSotw) fetchCompetitionWinners(lastSotw).then(setSotwWinners);
-        if (lastBotw) fetchCompetitionWinners(lastBotw).then(setBotwWinners);
+        if (lastSotw) fetchCompetitionWinners(lastSotw).then((value) => { if (active) setSotwWinners(value); });
+        if (lastBotw) fetchCompetitionWinners(lastBotw).then((value) => { if (active) setBotwWinners(value); });
       })
       .catch(() => {});
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (

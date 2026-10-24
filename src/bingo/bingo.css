@@ -320,6 +320,8 @@
   flex: 999 1 680px;
   min-width: 0;
   overflow-x: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .bingo-board {
@@ -476,8 +478,9 @@
 }
 
 .bingo-step {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
+  touch-action: manipulation;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -652,8 +655,18 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
+@media (max-width: 900px) {
+  .bingo-toast {
+    bottom: 6rem;
+  }
+}
+
 @media (max-width: 640px) {
   .bingo-push {
     margin-left: 0;
+  }
+
+  .bingo-tile__main {
+    min-height: 148px;
   }
 }

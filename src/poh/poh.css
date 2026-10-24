@@ -92,6 +92,14 @@
 }
 
 .poh-btn,
+.poh-select,
+.poh-floor,
+.poh-name,
+.poh-search {
+  min-height: 44px;
+}
+
+.poh-btn,
 .poh-select {
   background: #16243f;
   color: var(--poh-ink);
@@ -101,6 +109,7 @@
   font: inherit;
   font-weight: 800;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .poh-btn:hover,
@@ -238,6 +247,8 @@
 
 .poh-grid-scroll {
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   border-radius: 14px;
   border: 1px solid var(--poh-line);
   background: #08101e;
@@ -252,8 +263,15 @@
   min-width: 760px;
 }
 
+.poh-legend-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
 .poh-cell {
   position: relative;
+  touch-action: manipulation;
   aspect-ratio: 1;
   background: rgba(18, 36, 64, 0.55);
   outline: 1px solid rgba(125, 168, 214, 0.16);
@@ -564,5 +582,18 @@
 
   .poh-inspector {
     grid-template-columns: 120px 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .poh-inspector,
+  .poh-legend-layout {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .poh-name {
+    min-width: 0;
+    flex-basis: 100%;
   }
 }

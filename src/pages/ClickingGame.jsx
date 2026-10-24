@@ -29,14 +29,16 @@ function createFloatingEmoji() {
   return {
     ...item,
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    left: 6 + Math.random() * 88,
-    size: 28 + Math.random() * 32,
+    left: 12 + Math.random() * 76,
+    size: 28 + Math.random() * 28,
     duration: 6 + Math.random() * 5,
   };
 }
 
 function formatLeaderboardDate(value) {
-  return new Date(value).toLocaleDateString("en-US", {
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return "—";
+  return new Date(time).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -50,6 +52,7 @@ export default function ClickingGame() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [playerName, setPlayerName] = useState("");
   const [submitMessage, setSubmitMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [lastBonus, setLastBonus] = useState(null);
 
   const topScore = useMemo(() => leaderboard[0]?.score ?? 0, [leaderboard]);
@@ -112,15 +115,29 @@ export default function ClickingGame() {
 
   const handleSubmitScore = async (event) => {
     event.preventDefault();
+    if (submitting) return;
     setSubmitMessage("");
 
+    if (score < 1) {
+      setSubmitMessage("Click a few times before submitting a score.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       const nextRows = await saveClickLeaderboardEntry(playerName, score);
       setLeaderboard(nextRows);
       setPlayerName("");
       setSubmitMessage("Score added to the shared Clickerz Clicking Game leaderboard!");
-    } catch {
-      setSubmitMessage("Could not reach shared leaderboard. Please try again in a moment.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      setSubmitMessage(
+        message === "Score must be a positive number."
+          ? "Click a few times before submitting a score."
+          : "Could not reach shared leaderboard. Please try again in a moment.",
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -197,8 +214,8 @@ export default function ClickingGame() {
                 placeholder="Anonymous Clicker"
                 onChange={(event) => setPlayerName(event.target.value)}
               />
-              <button type="submit" className="button button--join">
-                Add score to leaderboard
+              <button type="submit" className="button button--join" disabled={submitting || score < 1}>
+                {submitting ? "Saving score..." : "Add score to leaderboard"}
               </button>
               {submitMessage && <p className="clicking-submit-message">{submitMessage}</p>}
             </form>

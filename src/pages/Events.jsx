@@ -62,7 +62,7 @@ const WOM_SKILLS = new Set([
 ]);
 
 function formatMetricName(metric = "") {
-  return metric
+  return String(metric || "")
     .replace(/_/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -89,7 +89,7 @@ function PreviousWinnersRow({ sotwWinners, botwWinners }) {
 
   const renderMini = (winners, isSkill) => {
     if (!winners) return null;
-    const top3 = (winners.participations ?? []).slice(0, 3);
+    const top3 = (Array.isArray(winners.participations) ? winners.participations : []).slice(0, 3);
     const comp = winners.comp;
 
     return (
@@ -98,7 +98,7 @@ function PreviousWinnersRow({ sotwWinners, botwWinners }) {
           <span className="winner-card__icon">{isSkill ? "🎒" : "🐉"}</span>
           <div>
             <div className="winner-card__type">{isSkill ? "SOTW" : "BOTW"}</div>
-            <div className="winner-card__metric">{formatMetricName(comp.metric)}</div>
+            <div className="winner-card__metric">{formatMetricName(comp?.metric)}</div>
           </div>
           <span className="event-status event-status--finished">🏁 Finished</span>
         </div>
@@ -204,7 +204,7 @@ export default function Events() {
         icon: "🎒",
         toneClass: "event-card--sky",
         title: sotwComp.title || `SOTW — ${formatMetricName(sotwComp.metric)}`,
-        subtitle: `${sotwComp.participantCount} participants competing for the most ${formatMetricName(sotwComp.metric)} XP this week.`,
+        subtitle: `${sotwComp.participantCount ?? 0} participants competing for the most ${formatMetricName(sotwComp.metric)} XP this week.`,
         startDate: formatCompDate(sotwComp.startsAt),
         endDate: formatCompDate(sotwComp.endsAt),
         prize: WEEKLY_EVENTS.sotw.prize,
@@ -236,7 +236,7 @@ export default function Events() {
         icon: "🐉",
         toneClass: "event-card--gold",
         title: botwComp.title || `BOTW — ${formatMetricName(botwComp.metric)}`,
-        subtitle: `${botwComp.participantCount} participants competing for the highest ${formatMetricName(botwComp.metric)} kill count this week.`,
+        subtitle: `${botwComp.participantCount ?? 0} participants competing for the highest ${formatMetricName(botwComp.metric)} kill count this week.`,
         startDate: formatCompDate(botwComp.startsAt),
         endDate: formatCompDate(botwComp.endsAt),
         prize: WEEKLY_EVENTS.botw.prize,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { stripUnsafeText } from "./textSanitize";
 
 export const CLICKERZ_SCORE_KEY = "clickerz-clicking-game-score";
 export const CLICKERZ_LEADERBOARD_KEY = "clickerz-clicking-game-leaderboard";
@@ -6,6 +7,25 @@ export const CLICKERZ_SCORE_EVENT = "clickerz-clicking-game-score-change";
 export const CLICKERZ_LEADERBOARD_ENDPOINT = "/api/clicking-leaderboard";
 
 const MAX_LEADERBOARD_ENTRIES = 25;
+const MAX_SCORE = 1_000_000_000;
+
+function sanitizeName(value) {
+  const cleaned = stripUnsafeText(value).trim().slice(0, 24);
+  return cleaned || "Anonymous Clicker";
+}
+
+function sanitizeScore(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score)) return null;
+  return Math.max(0, Math.min(MAX_SCORE, Math.round(score)));
+}
+
+function sanitizeDate(value) {
+  if (typeof value !== "string" || value.length > 40) return null;
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return null;
+  return new Date(time).toISOString();
+}
 
 function canUseStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -65,15 +85,28 @@ export function readClickLeaderboard() {
 function normalizeLeaderboardRows(rows) {
   if (!Array.isArray(rows)) return [];
 
-  return rows
-    .filter((row) => row && typeof row.name === "string" && Number.isFinite(row.score))
-    .map((row) => ({
-      id: String(row.id || `${row.name}-${row.score}`),
-      name: row.name.slice(0, 24),
-      score: Math.max(0, Math.round(row.score)),
-      date: row.date || new Date().toISOString(),
-    }))
-    .sort((a, b) => b.score - a.score)
+  const seenIds = new Set();
+  const cleaned = [];
+
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const score = sanitizeScore(row.score);
+    if (score === null || score < 1) continue;
+    const name = sanitizeName(row.name);
+    let id = stripUnsafeText(row.id).trim().slice(0, 64);
+    if (!id || seenIds.has(id)) id = `row-${seenIds.size}-${score}`;
+    while (seenIds.has(id)) id = `${id}-x`;
+    seenIds.add(id);
+    cleaned.push({
+      id,
+      name,
+      score,
+      date: sanitizeDate(row.date),
+    });
+  }
+
+  return cleaned
+    .sort((a, b) => b.score - a.score || String(b.date || "").localeCompare(String(a.date || "")))
     .slice(0, MAX_LEADERBOARD_ENTRIES);
 }
 
@@ -92,8 +125,11 @@ export async function fetchSharedClickLeaderboard() {
 }
 
 export async function saveClickLeaderboardEntry(name, score) {
-  const trimmedName = name.trim().slice(0, 24) || "Anonymous Clicker";
-  const safeScore = Math.max(0, Math.round(Number(score) || 0));
+  const trimmedName = sanitizeName(name);
+  const safeScore = sanitizeScore(score);
+  if (safeScore === null || safeScore < 1) {
+    throw new Error("Score must be a positive number.");
+  }
   const res = await fetch(CLICKERZ_LEADERBOARD_ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

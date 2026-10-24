@@ -14,13 +14,15 @@ const NAV_LINKS = [
 ];
 
 export default function NavBar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 50);
   const location = useLocation();
+  const locationKey = `${location.pathname}${location.hash}`;
+  const [openKey, setOpenKey] = useState(null);
+  const mobileOpen = openKey === locationKey;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -35,7 +37,7 @@ export default function NavBar() {
         }
       }
     }
-    setMobileOpen(false);
+    setOpenKey(null);
   };
 
   return (
@@ -76,7 +78,7 @@ export default function NavBar() {
         <button
           className="mobile-menu-button mobile-only"
           type="button"
-          onClick={() => setMobileOpen((prev) => !prev)}
+          onClick={() => setOpenKey((current) => (current === locationKey ? null : locationKey))}
           aria-expanded={mobileOpen}
           aria-label="Toggle menu"
         >

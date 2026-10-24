@@ -10,12 +10,11 @@ export default function ClickingGameWidget() {
   const [displayScore, setDisplayScore] = useState(score);
 
   useEffect(() => {
-    setDisplayScore(score);
+    setDisplayScore(score + pendingScoreRef.current);
   }, [score]);
 
   useEffect(() => {
     let flushTimeoutId = null;
-    let idleCallbackId = null;
 
     const flushPendingScore = () => {
       if (pendingScoreRef.current <= 0) return;
@@ -25,36 +24,36 @@ export default function ClickingGameWidget() {
     };
 
     const scheduleFlush = () => {
-      if (typeof window.requestIdleCallback === "function") {
-        if (idleCallbackId !== null) return;
-        idleCallbackId = window.requestIdleCallback(() => {
-          idleCallbackId = null;
-          flushPendingScore();
-        });
-        return;
-      }
       if (flushTimeoutId !== null) return;
       flushTimeoutId = window.setTimeout(() => {
         flushTimeoutId = null;
         flushPendingScore();
-      }, 250);
+      }, 200);
     };
 
-    const handleDocumentClick = () => {
+    const handleDocumentClick = (event) => {
+      if (event.button !== 0) return;
       pendingScoreRef.current += 1;
       setDisplayScore((value) => value + 1);
       scheduleFlush();
     };
 
+    const handlePageHide = () => {
+      if (flushTimeoutId !== null) {
+        window.clearTimeout(flushTimeoutId);
+        flushTimeoutId = null;
+      }
+      flushPendingScore();
+    };
+
     document.addEventListener("click", handleDocumentClick, true);
+    window.addEventListener("pagehide", handlePageHide);
 
     return () => {
       document.removeEventListener("click", handleDocumentClick, true);
-      flushPendingScore();
+      window.removeEventListener("pagehide", handlePageHide);
       if (flushTimeoutId !== null) window.clearTimeout(flushTimeoutId);
-      if (idleCallbackId !== null && typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleCallbackId);
-      }
+      flushPendingScore();
     };
   }, [addScore]);
 

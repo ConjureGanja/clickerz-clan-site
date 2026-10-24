@@ -206,6 +206,45 @@ validDependency.floors.ground.find((piece) => piece.roomId === "quest-hall").bui
 validDependency.floors.upper = [{ uid: "u1", roomId: "parlour", x: 4, y: 5, rotation: 0 }];
 expect(normalizeLayout(validDependency, () => "generated") !== null, "valid floor anchors preserve the layout");
 
+const overlap = {
+  name: "Overlap",
+  floors: {
+    ground: [
+      { uid: "a", roomId: "parlour", x: 2, y: 2, rotation: 0 },
+      { uid: "b", roomId: "bedroom", x: 2, y: 2, rotation: 1 },
+    ],
+  },
+};
+const overlapped = normalizeLayout(overlap, () => "generated");
+expect(overlapped?.floors.ground.length === 1 && overlapped.floors.ground[0].roomId === "parlour", "overlapping rooms keep the first tile");
+
+const duplicateUid = {
+  name: "Dupes",
+  floors: {
+    ground: [
+      { uid: "same", roomId: "parlour", x: 0, y: 0, rotation: 0 },
+      { uid: "same", roomId: "bedroom", x: 1, y: 0, rotation: 0 },
+    ],
+  },
+};
+const deduped = normalizeLayout(duplicateUid, () => "generated");
+expect(deduped?.floors.ground.length === 2, "rooms on different tiles are kept");
+expect(new Set(deduped?.floors.ground.map((piece) => piece.uid)).size === 2, "duplicate room ids are rewritten");
+
+const generatedIds = normalizeLayout({
+  floors: {
+    ground: [
+      { roomId: "parlour", x: 0, y: 0 },
+      { roomId: "bedroom", x: 1, y: 0 },
+    ],
+  },
+}, () => "generated");
+expect(generatedIds?.floors.ground[0].uid !== generatedIds?.floors.ground[1].uid, "generated ids stay unique when the id factory repeats");
+
+const noisyName = `  hello\u0000world${"x".repeat(100)}  `;
+const named = normalizeLayout({ name: noisyName, floors: { ground: [] } }, () => "generated");
+expect(named?.name.length === 80 && named.name.startsWith("helloworld"), "layout names are trimmed, stripped, and capped");
+
 const report = ROOMS.map((room) => `${room.name}\t${room.level}\t${room.cost}\t${room.doors.join("")}\t${room.placement.floors.join("+")}`).join("\n");
 fs.writeFileSync("/tmp/poh-room-report.tsv", report);
 
