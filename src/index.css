@@ -1752,23 +1752,26 @@ main {
     display: none;
   }
 
-  .clicker-widget__music {
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__music {
     grid-column: 1 / -1;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
     min-width: 0;
   }
 
-  .clicker-widget__music-row {
-    justify-content: flex-end;
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__music-label,
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__music-row,
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__player {
+    grid-column: 1;
+    min-width: 0;
   }
 
-  .clicker-widget__player {
-    grid-column: 1 / -1;
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__music-row {
+    justify-content: flex-start;
   }
 
   .clicker-widget:not([data-docked="true"]) .clicker-widget__frame {
-    height: 200px;
+    height: 166px;
   }
 
   .clicker-widget:not([data-docked="true"]) .clicker-widget__tracks {
