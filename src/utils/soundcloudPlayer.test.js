@@ -26,7 +26,19 @@ expect(src.includes(encodeURIComponent(SOUNDCLOUD_PROFILE_URL)), "embed points a
 expect(src.includes("visual=false"), "classic playlist view keeps visual=false");
 expect(src.includes("show_artwork=false"), "artwork stays off so the tracklist has room");
 expect(src.includes("show_comments=false") && src.includes("buying=false"), "extra chrome stays hidden");
-expect(isSoundcloudPage("/clicking-game") && !isSoundcloudPage("/events") && !isSoundcloudPage("/"), "only Our Soundcloud docks the player");
+expect(isSoundcloudPage("/clicking-game"), "the soundcloud route docks the player");
+expect(isSoundcloudPage("/clicking-game/"), "a trailing slash still docks the player");
+expect(isSoundcloudPage("/Clicking-Game"), "route matching ignores case");
+expect(isSoundcloudPage("/Clicking-Game/"), "mixed case with a trailing slash still docks the player");
+expect(
+  !isSoundcloudPage("/events")
+  && !isSoundcloudPage("/")
+  && !isSoundcloudPage("/clicking-games")
+  && !isSoundcloudPage("")
+  && !isSoundcloudPage(null)
+  && !isSoundcloudPage(undefined),
+  "other paths and invalid values stay popped out",
+);
 
 expect(readWidgetMessage('{"method":"getSounds","value":[]}')?.method === "getSounds", "string widget messages parse");
 expect(readWidgetMessage({ method: "play" })?.method === "play", "object widget messages pass through");

@@ -22,8 +22,15 @@ const EMBED_PARAMS = [
 
 const dockListeners = new Set();
 
+export function normalizePathname(pathname) {
+  if (typeof pathname !== "string" || pathname.length === 0) return "";
+  const lowered = pathname.toLowerCase();
+  if (lowered === "/") return "/";
+  return lowered.replace(/\/+$/, "");
+}
+
 export function isSoundcloudPage(pathname) {
-  return pathname === SOUNDCLOUD_PAGE_PATH;
+  return normalizePathname(pathname) === SOUNDCLOUD_PAGE_PATH;
 }
 
 export function buildSoundcloudEmbedSrc(profileUrl = SOUNDCLOUD_PROFILE_URL) {
