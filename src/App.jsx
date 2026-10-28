@@ -4,6 +4,7 @@ import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import ClickingGameWidget from "./components/ClickingGameWidget";
+import { isSoundcloudPage } from "./utils/soundcloudPlayer";
 
 const Events = lazy(() => import("./pages/Events"));
 const Guides = lazy(() => import("./pages/Guides"));
@@ -41,14 +42,16 @@ function PageFallback() {
   );
 }
 
-export default function App() {
+function AppFrame() {
+  const location = useLocation();
+  const playerDocked = isSoundcloudPage(location.pathname);
+
   return (
-    <Router>
-      <div className="app-shell">
-        <ScrollToTop />
-        <NavBar />
-        <ClickingGameWidget />
-        <main>
+    <div className={playerDocked ? "app-shell app-shell--player-docked" : "app-shell"}>
+      <ScrollToTop />
+      <NavBar />
+      <ClickingGameWidget />
+      <main>
           <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -63,8 +66,15 @@ export default function App() {
           </Routes>
           </Suspense>
         </main>
-        <Footer />
-      </div>
+      <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppFrame />
     </Router>
   );
 }

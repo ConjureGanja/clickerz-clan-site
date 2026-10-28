@@ -890,7 +890,9 @@ main {
   right: 1rem;
   top: 50%;
   z-index: 900;
-  width: min(240px, calc(100vw - 1.5rem));
+  width: min(300px, calc(100vw - 1.5rem));
+  max-height: calc(100vh - 5.5rem);
+  overflow: auto;
   padding: 0.9rem;
   border-radius: 18px;
   background: rgba(24, 24, 31, 0.92);
@@ -930,10 +932,23 @@ main {
   color: var(--gold);
 }
 
+.clicker-widget__dock-note {
+  display: none;
+  margin-top: 0.65rem;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .clicker-widget__divider {
   margin: 0.6rem 0;
   border: 0;
   border-top: 1px solid rgba(135, 206, 235, 0.12);
+}
+
+.clicker-widget__music {
+  display: grid;
+  gap: 0.45rem;
 }
 
 .clicker-widget__music-label {
@@ -942,7 +957,9 @@ main {
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 0.4rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .clicker-widget__music-row {
@@ -967,15 +984,184 @@ main {
   flex-shrink: 0;
 }
 
+.clicker-widget__player {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .clicker-widget__frame {
-  position: absolute;
-  width: 180px;
-  height: 20px;
-  opacity: 0;
-  pointer-events: none;
+  display: block;
+  width: 100%;
+  height: 300px;
   border: 0;
-  left: 0;
-  bottom: 0;
+  border-radius: 12px;
+  background: #101016;
+}
+
+.clicker-widget__tracks-heading {
+  margin-bottom: 0.35rem;
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.clicker-widget__tracks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 168px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 12px;
+  background: rgba(12, 12, 15, 0.45);
+  border: 1px solid rgba(135, 206, 235, 0.12);
+}
+
+.clicker-widget__track {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-bottom: 1px solid rgba(135, 206, 235, 0.08);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.clicker-widget__track:hover {
+  background: rgba(135, 206, 235, 0.1);
+}
+
+.clicker-widget__track:focus-visible {
+  outline: 2px solid var(--sky);
+  outline-offset: -2px;
+}
+
+.clicker-widget__track[aria-current="true"] {
+  background: rgba(255, 215, 0, 0.12);
+  color: var(--gold);
+}
+
+.clicker-widget__track-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clicker-widget__track-index,
+.clicker-widget__track-time {
+  color: var(--text-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.clicker-widget__track[aria-current="true"] .clicker-widget__track-index,
+.clicker-widget__track[aria-current="true"] .clicker-widget__track-time {
+  color: var(--gold);
+}
+
+.clicker-widget__tracks-empty {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.clicker-widget-dock-wrap {
+  position: relative;
+  z-index: 4;
+  grid-column: 1 / -1;
+}
+
+.clicker-widget-dock {
+  min-height: 760px;
+  pointer-events: none;
+}
+
+.app-shell.app-shell--player-docked {
+  padding-bottom: 0;
+}
+
+.app-shell--player-docked main {
+  padding-right: 0;
+}
+
+.clicker-widget[data-docked="true"] {
+  position: absolute;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  top: auto;
+  z-index: 4;
+  width: auto;
+  max-height: none;
+  overflow: visible;
+  display: block;
+  transform: none;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__scorebox {
+  display: block;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__score {
+  margin-top: 0.35rem;
+  margin-left: 0;
+  font-size: 15px;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__link--popout {
+  display: none;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__dock-note {
+  display: inline-flex;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__divider {
+  display: block;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__music {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__music-label {
+  white-space: normal;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__player {
+  grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.7fr);
+  align-items: start;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__frame {
+  height: 450px;
+}
+
+.clicker-widget[data-docked="true"] .clicker-widget__tracks {
+  max-height: 418px;
+}
+
+@media (max-width: 800px) {
+  .clicker-widget[data-docked="true"] .clicker-widget__player {
+    grid-template-columns: 1fr;
+  }
+
+  .clicker-widget[data-docked="true"] .clicker-widget__tracks {
+    max-height: 280px;
+  }
 }
 
 .clicker-widget__btn:hover {
@@ -1496,9 +1682,9 @@ main {
 
 /* ── Responsive ──────────────────────────────────── */
 
-@media (min-width: 901px) and (max-width: 1560px) {
+@media (min-width: 901px) and (max-width: 1760px) {
   main {
-    padding-right: 17rem;
+    padding-right: 20.5rem;
   }
 }
 
@@ -1524,7 +1710,7 @@ main {
   }
 
   .app-shell {
-    padding-bottom: 9.5rem;
+    padding-bottom: calc(min(52vh, 420px) + 1rem);
   }
 
   .clicker-widget {
@@ -1533,6 +1719,7 @@ main {
     top: auto;
     bottom: 0.75rem;
     width: auto;
+    max-height: min(52vh, 420px);
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -1567,14 +1754,29 @@ main {
 
   .clicker-widget__music {
     grid-column: 1 / -1;
-    display: flex;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: 0.5rem;
     min-width: 0;
   }
 
-  .clicker-widget__music-label {
-    margin-bottom: 0;
+  .clicker-widget__music-row {
+    justify-content: flex-end;
+  }
+
+  .clicker-widget__player {
+    grid-column: 1 / -1;
+  }
+
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__frame {
+    height: 200px;
+  }
+
+  .clicker-widget:not([data-docked="true"]) .clicker-widget__tracks {
+    max-height: 132px;
+  }
+
+  .clicker-widget-dock {
+    min-height: 1040px;
   }
 
   .clicking-game-layout {
