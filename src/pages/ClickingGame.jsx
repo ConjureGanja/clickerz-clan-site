@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import SectionBadge from "../components/SectionBadge";
 import {
   fetchSharedClickLeaderboard,
@@ -6,8 +6,11 @@ import {
   saveClickLeaderboardEntry,
   useClickerzScore,
 } from "../utils/clickingGame";
-
-const SOUNDCLOUD_PROFILE_URL = "https://soundcloud.com/clickerz-cc";
+import {
+  CLICKER_WIDGET_DOCK_ID,
+  SOUNDCLOUD_PROFILE_URL,
+  notifySoundcloudDock,
+} from "../utils/soundcloudPlayer";
 
 const FLOATING_EMOJIS = [
   { emoji: "🌿", value: 10 },
@@ -60,6 +63,11 @@ export default function ClickingGame() {
     return () => {
       document.title = previousTitle;
     };
+  }, []);
+
+  useLayoutEffect(() => {
+    notifySoundcloudDock();
+    return () => notifySoundcloudDock();
   }, []);
 
   useEffect(() => {
@@ -162,13 +170,24 @@ export default function ClickingGame() {
           </h1>
           <p className="hero-subtitle">
             Every site click counts. Catch the floating emojis for bonus points, but dodge the traps.
-            The clan SoundCloud starts with your first click, tap, or scroll, and you can pause or mute it from the widget.
+            The clan playlist is docked on this tab. On every other tab the same player pops back out and keeps playing.
           </p>
         </div>
       </section>
 
       <section className="page-section clicking-game-arena" aria-label="Our Soundcloud">
         <div className="container clicking-game-layout">
+          <div className="clicker-widget-dock-wrap">
+            <div className="section-header">
+              <SectionBadge tone="gold">Playlist</SectionBadge>
+              <h2 className="section-title">Clan tracks</h2>
+              <p className="section-subtitle">
+                Browse the list and start any track. This player is part of the page here, and it pops out on the other tabs without reloading.
+              </p>
+            </div>
+            <div id={CLICKER_WIDGET_DOCK_ID} className="clicker-widget-dock" />
+          </div>
+
           <div className="clicking-score-card">
             <div className="clicking-score-card__label">Your clicks</div>
             <div className="clicking-score-card__score">{formatClickCount(score)}</div>
@@ -186,8 +205,8 @@ export default function ClickingGame() {
             <div className="clicking-panel-card">
               <h2>Our Soundcloud</h2>
               <p>
-                The player sits with the click counter on every page. Pause or mute it there.
-                This page is for the clicking game and the shared score list.
+                Pause, mute, or switch tracks in the docked player above.
+                Open another tab and that same player pops out. The music does not restart.
               </p>
               <a
                 className="button button--secondary"
